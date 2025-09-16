@@ -103,3 +103,24 @@ html, body, #__next { height: 100%; }
     background: rgba(75, 85, 99, 0.7);
   }
 }
+
+/* Vega chart dark theme overrides */
+.vega-embed {
+  background-color: #0d1117 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.vega-embed svg {
+  background-color: #0d1117 !important;
+  margin: 0 !important;
+}
+
+.vega-embed .vega-actions {
+  background-color: #0d1117 !important;
+}
+
+/* Ensure table cells have proper dark backgrounds */
+table td, table th {
+  background-color: inherit !important;
+}

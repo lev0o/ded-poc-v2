@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import { AgentRunResponse } from "@/lib/types";
 import { extractLastAIText, extractTable, extractVegaSpec } from "@/lib/utils";
 import DataTable from "./DataTable";
-import Chart from "./Chart";
+import VegaChart from "./VegaChart";
 
 interface Props {
   last: AgentRunResponse | null;
@@ -43,6 +43,7 @@ export default function CenterPane({ last }: Props) {
   const chart = extractVegaSpec(sanitizedLast.messages);
   const aiText = extractLastAIText(sanitizedLast.messages);
 
+
   return (
     <div className="p-4 space-y-6">
       {table?.sql && (
@@ -55,14 +56,20 @@ export default function CenterPane({ last }: Props) {
       {table && (
         <section>
           <h3 className="text-sm font-bold mb-2 text-[#f0f6fc]">Data ({table.rowCount} rows)</h3>
-          <DataTable columns={table.columns} rows={table.rows} />
+          <div className="inline-block rounded border border-[#30363d] overflow-hidden">
+            <DataTable columns={table.columns} rows={table.rows} />
+          </div>
         </section>
       )}
 
       {chart && (
         <section>
           <h3 className="text-sm font-bold mb-2 text-[#f0f6fc]">Chart</h3>
-          <Chart spec={sanitizeData(chart)} />
+          <div className="inline-block rounded border border-[#30363d] overflow-hidden bg-[#0d1117]">
+            <div className="p-3">
+              <VegaChart spec={sanitizeData(chart)} />
+            </div>
+          </div>
         </section>
       )}
 
