@@ -61,7 +61,7 @@ export default function ContextChips({ items, onRemove }: Props) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1 max-w-full">
+    <div className="flex flex-wrap items-start gap-1 max-w-full">
       {items.map((it) => (
         <span 
           key={`${it.label}:${it.id}`} 

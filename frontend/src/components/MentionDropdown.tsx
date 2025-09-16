@@ -58,6 +58,38 @@ function getDatabaseIcon(kind: string) {
   }
 }
 
+// Helper function to get display name from ID and catalog data
+function getDisplayName(item: ContextItem, catalog: any): string {
+  if (item.label === "Workspace") {
+    // Format: workspace:workspaceId
+    const parts = item.id.split(':');
+    const workspaceId = parts[1];
+    const workspace = catalog.workspaces.find((ws: any) => ws.id === workspaceId);
+    return workspace?.name || workspaceId;
+  } else if (item.label === "SQL Database/Endpoint") {
+    // Format: database:workspaceId:databaseId
+    const parts = item.id.split(':');
+    const workspaceId = parts[1];
+    const databaseId = parts[2];
+    const workspace = catalog.workspaces.find((ws: any) => ws.id === workspaceId);
+    const database = workspace?.databases?.find((db: any) => db.id === databaseId);
+    return database?.name || databaseId;
+  } else if (item.label === "Schema") {
+    // Format: schema:workspaceId:databaseId:schemaName
+    const parts = item.id.split(':');
+    return parts[3] || item.id;
+  } else if (item.label === "Table") {
+    // Format: table:workspaceId:databaseId:schemaName.tableName
+    const parts = item.id.split(':');
+    return parts[3] || item.id;
+  } else if (item.label === "Column") {
+    // Format: column:workspaceId:databaseId:schemaName.tableName.columnName
+    const parts = item.id.split(':');
+    return parts[3] || item.id;
+  }
+  return item.id;
+}
+
 export default function MentionDropdown({ query, onSelect, onClose, position }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -72,24 +104,21 @@ export default function MentionDropdown({ query, onSelect, onClose, position }: 
   const filteredItems: ContextItem[] = React.useMemo(() => {
     if (!catalog) return [];
     
-    console.log('MentionDropdown catalog:', catalog); // Debug log
     const items: ContextItem[] = [];
     const queryLower = query.toLowerCase();
 
     // Add workspaces
     catalog.workspaces.forEach((ws: WorkspaceCatalog) => {
-      console.log('Workspace:', ws.name, 'databases:', ws.databases?.length || 0);
       if (!query || ws.name?.toLowerCase().includes(queryLower)) {
-        items.push({ label: "Workspace", id: ws.name || ws.id });
+        items.push({ label: "Workspace", id: `workspace:${ws.id}` });
       }
     });
 
     // Add databases
     catalog.workspaces.forEach((ws: WorkspaceCatalog) => {
       ws.databases?.forEach((db: Database) => {
-        console.log('Database:', db.name, 'schemas:', db.schemas?.length || 0);
         if (!query || db.name?.toLowerCase().includes(queryLower)) {
-          items.push({ label: "SQL Database/Endpoint", id: db.name || db.id });
+          items.push({ label: "SQL Database/Endpoint", id: `database:${ws.id}:${db.id}` });
         }
       });
     });
@@ -98,9 +127,8 @@ export default function MentionDropdown({ query, onSelect, onClose, position }: 
     catalog.workspaces.forEach((ws: WorkspaceCatalog) => {
       ws.databases?.forEach((db: Database) => {
         db.schemas?.forEach((schema: Schema) => {
-          console.log('Schema:', schema.name, 'tables:', schema.tables?.length || 0);
           if (!query || schema.name?.toLowerCase().includes(queryLower)) {
-            items.push({ label: "Schema", id: schema.name });
+            items.push({ label: "Schema", id: `schema:${ws.id}:${db.id}:${schema.name}` });
           }
         });
       });
@@ -111,9 +139,8 @@ export default function MentionDropdown({ query, onSelect, onClose, position }: 
       ws.databases?.forEach((db: Database) => {
         db.schemas?.forEach((schema: Schema) => {
           schema.tables?.forEach((table: Table) => {
-            console.log('Table:', table.name, 'columns:', table.columns?.length || 0);
             if (!query || table.name?.toLowerCase().includes(queryLower)) {
-              items.push({ label: "Table", id: `${schema.name}.${table.name}` });
+              items.push({ label: "Table", id: `table:${ws.id}:${db.id}:${schema.name}.${table.name}` });
             }
           });
         });
@@ -127,7 +154,7 @@ export default function MentionDropdown({ query, onSelect, onClose, position }: 
           schema.tables?.forEach((table: Table) => {
             table.columns?.forEach((column: Column) => {
               if (!query || column.name?.toLowerCase().includes(queryLower)) {
-                items.push({ label: "Column", id: `${schema.name}.${table.name}.${column.name}` });
+                items.push({ label: "Column", id: `column:${ws.id}:${db.id}:${schema.name}.${table.name}.${column.name}` });
               }
             });
           });
@@ -135,7 +162,7 @@ export default function MentionDropdown({ query, onSelect, onClose, position }: 
       });
     });
 
-    return items.slice(0, 10); // Limit to 10 items
+    return items; // Show all items
   }, [catalog, query]);
 
   // Handle keyboard navigation
@@ -167,6 +194,20 @@ export default function MentionDropdown({ query, onSelect, onClose, position }: 
     setSelectedIndex(0);
   }, [query]);
 
+  // Auto-scroll to keep selected item visible
+  useEffect(() => {
+    if (dropdownRef.current && filteredItems.length > 0) {
+      const selectedButton = dropdownRef.current.querySelector(`button:nth-child(${selectedIndex + 2})`); // +2 because first child is the header
+      if (selectedButton) {
+        // Use immediate scrolling to prevent jittery behavior during rapid navigation
+        selectedButton.scrollIntoView({
+          behavior: 'auto',
+          block: 'nearest'
+        });
+      }
+    }
+  }, [selectedIndex, filteredItems.length]);
+
   if (filteredItems.length === 0) {
     return null;
   }
@@ -174,30 +215,30 @@ export default function MentionDropdown({ query, onSelect, onClose, position }: 
   return (
     <div
       ref={dropdownRef}
-      className="absolute bottom-full left-0 mb-1 z-50 bg-[#161b22] border border-[#30363d] rounded-lg shadow-lg max-h-48 overflow-y-auto min-w-[280px]"
+      className="absolute bottom-full left-0 mb-1 z-50 bg-[#161b22] border border-[#30363d] rounded-lg shadow-lg max-h-80 overflow-y-auto w-full"
     >
       <div className="p-1.5">
         <div className="text-xs text-[#e6edf3] opacity-70 mb-1.5">
           {query ? `${filteredItems.length} result${filteredItems.length !== 1 ? 's' : ''} for "${query}"` : `${filteredItems.length} items available`}
         </div>
         {filteredItems.map((item, index) => (
-          <button
-            key={`${item.label}:${item.id}`}
-            onClick={() => onSelect(item)}
-            className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 ${
-              index === selectedIndex 
-                ? 'bg-[#1f6feb] text-white' 
-                : 'text-[#e6edf3] hover:bg-[#21262d]'
-            }`}
-          >
-            {item.label === "Workspace" && <Building2 size={12} className="text-[#58a6ff]" />}
-            {item.label === "SQL Database/Endpoint" && <Server size={12} className="text-[#3fb950]" />}
-            {item.label === "Schema" && <FolderOpen size={12} className="text-[#f85149]" />}
-            {item.label === "Table" && <Table2 size={12} className="text-[#a855f7]" />}
-            {item.label === "Column" && <Columns size={12} className="text-[#ffa657]" />}
-            <span className="truncate text-xs">{item.id}</span>
-            <span className="text-xs opacity-60 ml-auto">{item.label}</span>
-          </button>
+           <button
+             key={`${item.label}:${item.id}`}
+             onClick={() => onSelect(item)}
+             className={`w-full text-left px-2 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 ${
+               index === selectedIndex 
+                 ? 'bg-[#1f6feb] text-white' 
+                 : 'text-[#e6edf3] hover:bg-[#21262d]'
+             }`}
+           >
+             {item.label === "Workspace" && <Building2 size={12} className="text-[#58a6ff] flex-shrink-0" />}
+             {item.label === "SQL Database/Endpoint" && <Server size={12} className="text-[#3fb950] flex-shrink-0" />}
+             {item.label === "Schema" && <FolderOpen size={12} className="text-[#f85149] flex-shrink-0" />}
+             {item.label === "Table" && <Table2 size={12} className="text-[#a855f7] flex-shrink-0" />}
+             {item.label === "Column" && <Columns size={12} className="text-[#ffa657] flex-shrink-0" />}
+             <span className="text-xs truncate flex-1 min-w-0">{getDisplayName(item, catalog)}</span>
+             <span className="text-xs opacity-60 flex-shrink-0 ml-2">{item.label}</span>
+           </button>
         ))}
       </div>
     </div>

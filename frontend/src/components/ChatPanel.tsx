@@ -6,6 +6,8 @@ import { newAgentSession, runAgent, setAgentContext } from "@/lib/api";
 import ContextChips from "./ContextChips";
 import MessageArea from "./MessageArea";
 import MentionDropdown from "./MentionDropdown";
+import { useQuery } from "@tanstack/react-query";
+import { getCatalog } from "@/lib/api";
 
 interface Props {
   context: ContextItem[];
@@ -22,6 +24,46 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
   const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
 
+  const { data: catalog } = useQuery({
+    queryKey: ["catalog"],
+    queryFn: getCatalog,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Helper function to get display name for context formatting
+  const getContextDisplayName = (item: ContextItem): string => {
+    if (!catalog) return item.id;
+    
+    if (item.label === "Workspace") {
+      // Format: workspace:workspaceId
+      const parts = item.id.split(':');
+      const workspaceId = parts[1];
+      const workspace = catalog.workspaces.find((ws: any) => ws.id === workspaceId);
+      return workspace?.name || workspaceId;
+    } else if (item.label === "SQL Database/Endpoint") {
+      // Format: database:workspaceId:databaseId
+      const parts = item.id.split(':');
+      const workspaceId = parts[1];
+      const databaseId = parts[2];
+      const workspace = catalog.workspaces.find((ws: any) => ws.id === workspaceId);
+      const database = workspace?.databases?.find((db: any) => db.id === databaseId);
+      return database?.name || databaseId;
+    } else if (item.label === "Schema") {
+      // Format: schema:workspaceId:databaseId:schemaName
+      const parts = item.id.split(':');
+      return parts[3] || item.id;
+    } else if (item.label === "Table") {
+      // Format: table:workspaceId:databaseId:schemaName.tableName
+      const parts = item.id.split(':');
+      return parts[3] || item.id;
+    } else if (item.label === "Column") {
+      // Format: column:workspaceId:databaseId:schemaName.tableName.columnName
+      const parts = item.id.split(':');
+      return parts[3] || item.id;
+    }
+    return item.id;
+  };
+
   useEffect(() => {
     // lazy-create session on first render
     (async () => {
@@ -31,6 +73,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const { mutate: send, isPending } = useMutation({
     mutationFn: async (message: string) => {
@@ -49,7 +92,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
       if (ai) {
         // Create enhanced user message content that includes context info
         const userContent = context.length > 0 
-          ? `${input}\n\n*Context: ${context.map(c => `${c.label} (${c.id})`).join(', ')}*`
+          ? `${input}\n\n*Context: ${context.map(c => `${c.label}: ${getContextDisplayName(c)}`).join(', ')}*`
           : input;
         
         setTurns(t => [
@@ -75,15 +118,32 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
   
   // Remove context and corresponding @ mention from text
   const onRemoveContext = (id: string) => {
+    console.log('=== onRemoveContext ===');
+    console.log('Removing ID:', id);
+    console.log('Current input:', JSON.stringify(input));
+    console.log('Current context:', context);
+    
     // Remove from context
     const newContext = context.filter(c => c.id !== id);
     onContextChange(newContext);
     
-    // Remove @ mention from text - be more precise with regex
-    const escapedId = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const mentionRegex = new RegExp(`@${escapedId}\\b`, 'g');
-    const newInput = input.replace(mentionRegex, '');
-    setInput(newInput);
+    // Find the context item to get its display name
+    const contextItem = context.find(c => c.id === id);
+    console.log('Found context item:', contextItem);
+    
+    if (contextItem) {
+      const displayName = getContextDisplayName(contextItem);
+      console.log('Display name:', JSON.stringify(displayName));
+      
+      // Remove @ mention from text using display name
+      const escapedName = displayName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      console.log('Escaped name:', escapedName);
+      const mentionRegex = new RegExp(`@${escapedName}(?=\\s|$)`, 'g');
+      console.log('Regex:', mentionRegex);
+      const newInput = input.replace(mentionRegex, '');
+      console.log('New input:', JSON.stringify(newInput));
+      setInput(newInput);
+    }
     
     // keep backend in sync if session exists
     if (sessionId) setAgentContext(sessionId, newContext).catch(() => void 0);
@@ -97,19 +157,48 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
     // Check for @ mention
     const cursorPos = e.target.selectionStart;
     const textBeforeCursor = value.substring(0, cursorPos);
-    const mentionMatch = textBeforeCursor.match(/@([^\s]*)$/);
-
-    if (mentionMatch) {
-      const query = mentionMatch[1];
-      setMentionQuery(query);
+    
+    // Look for @ at the end of the text before cursor
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    if (lastAtIndex !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
       
-      // Calculate position for dropdown
-      const rect = e.target.getBoundingClientRect();
-      setMentionPosition({
-        top: rect.bottom + 4,
-        left: rect.left
-      });
-      setShowMentionDropdown(true);
+      // Check if this looks like a mention (not part of a completed mention)
+      // A mention is either:
+      // 1. At the very end of text
+      // 2. Followed by a space (indicating it's complete)
+      // 3. Currently being typed (no space after it yet)
+      
+      const textAfterCursor = value.substring(cursorPos);
+      const isTypingMention = textAfterCursor === '' || textAfterCursor.startsWith(' ');
+      
+      if (isTypingMention) {
+        // Check if this matches any existing context item
+        // Only check for existing mentions if there's actual text after @
+        const isExistingMention = textAfterAt.length > 0 && context.some(item => {
+          const displayName = getContextDisplayName(item);
+          return textAfterAt === displayName || displayName.startsWith(textAfterAt);
+        });
+        
+        if (!isExistingMention) {
+          // This is a new mention being typed (including just @)
+          setMentionQuery(textAfterAt);
+          
+          // Calculate position for dropdown
+          const rect = e.target.getBoundingClientRect();
+          setMentionPosition({
+            top: rect.bottom + 4,
+            left: rect.left
+          });
+          setShowMentionDropdown(true);
+        } else {
+          setShowMentionDropdown(false);
+          setMentionQuery("");
+        }
+      } else {
+        setShowMentionDropdown(false);
+        setMentionQuery("");
+      }
     } else {
       setShowMentionDropdown(false);
       setMentionQuery("");
@@ -122,28 +211,33 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
     const textBeforeCursor = input.substring(0, cursorPos);
     const textAfterCursor = input.substring(cursorPos);
     
-    // Replace the @ mention with the selected item
-    const beforeMention = textBeforeCursor.replace(/@[^\s]*$/, '');
-    const newInput = beforeMention + `@${item.id}` + textAfterCursor;
-    const newCursorPos = beforeMention.length + `@${item.id}`.length;
-    
-    setInput(newInput);
-    setShowMentionDropdown(false);
-    setMentionQuery("");
-    
-    // Add to context only if not already present
-    const existingContext = context.find(c => c.id === item.id && c.label === item.label);
-    if (!existingContext) {
-      onContextChange([...context, item]);
-    }
-    
-    // Restore cursor position
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-        inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+    // Find the last @ in the text before cursor (the one being typed)
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    if (lastAtIndex !== -1) {
+      // Replace from the last @ to the cursor position
+      const beforeAt = textBeforeCursor.substring(0, lastAtIndex);
+      const displayName = getContextDisplayName(item);
+      const newInput = beforeAt + `@${displayName}` + textAfterCursor;
+      const newCursorPos = beforeAt.length + `@${displayName}`.length;
+      
+      setInput(newInput);
+      setShowMentionDropdown(false);
+      setMentionQuery("");
+      
+      // Add to context only if not already present
+      const existingContext = context.find(c => c.id === item.id);
+      if (!existingContext) {
+        onContextChange([...context, item]);
       }
-    }, 0);
+      
+      // Restore cursor position
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    }
   };
 
   // Handle mention dropdown close
@@ -170,13 +264,37 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
       const textBeforeCursor = input.substring(0, cursorPos);
       
       // Check if cursor is right after a complete @ mention
-      const mentionRegex = /@([^\s]+)$/;
-      const match = textBeforeCursor.match(mentionRegex);
+      // Only trigger if cursor is at the very end of a mention (no characters after it)
+      let bestMatch = null;
+      let bestContextItem = null;
       
-      if (match) {
-        // Check if this @ mention corresponds to an existing context item
-        const mentionId = match[1];
-        const contextItem = context.find(item => item.id === mentionId);
+      // Check if cursor is at the end of the text or followed by a space
+      const textAfterCursor = input.substring(cursorPos);
+      const isAtEndOfMention = textAfterCursor === '' || textAfterCursor.startsWith(' ');
+      
+      if (isAtEndOfMention) {
+        for (const contextItem of context) {
+          const displayName = getContextDisplayName(contextItem);
+          const mentionPattern = `@${displayName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`;
+          const regex = new RegExp(mentionPattern);
+          const match = textBeforeCursor.match(regex);
+          
+          if (match && (!bestMatch || match[0].length > bestMatch[0].length)) {
+            bestMatch = match;
+            bestContextItem = contextItem;
+          }
+        }
+      }
+      
+      const match = bestMatch;
+      
+      if (match && bestContextItem) {
+        // We already found the matching context item
+        const contextItem = bestContextItem;
+        const mentionName = match[1];
+        console.log('=== handleKeyDown ===');
+        console.log('Looking for mention:', JSON.stringify(mentionName));
+        console.log('Found context item:', contextItem);
         
         if (contextItem) {
           e.preventDefault();
@@ -188,7 +306,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
           setInput(newInput);
           
           // Remove the corresponding context chip
-          const newContext = context.filter(c => c.id !== mentionId);
+          const newContext = context.filter(c => c.id !== contextItem.id);
           onContextChange(newContext);
           
           // Keep backend in sync
@@ -255,7 +373,9 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
         </div>
         <div className="mt-2 flex justify-between items-center">
           <div className="flex items-center gap-2 flex-1">
-            <ContextChips items={context} onRemove={onRemoveContext} />
+            <div className="max-h-10 overflow-y-auto w-full">
+              <ContextChips items={context} onRemove={onRemoveContext} />
+            </div>
           </div>
           <div className="ml-3">
             <button
