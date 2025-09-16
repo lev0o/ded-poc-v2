@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func
 
-from backend.catalog.db import get_session
-from backend.catalog.models import Workspace, Item, SqlEndpoint
-from backend.catalog.upsert import upsert_workspaces, upsert_items, upsert_sql_endpoints
-from backend.clients.fabric import list_workspaces, list_items, map_workspace, map_item, resolve_sql_endpoints_for_workspace
+from catalog.db import get_session
+from catalog.models import Workspace, Item, SqlEndpoint
+from catalog.upsert import upsert_workspaces, upsert_items, upsert_sql_endpoints
+from clients.fabric import list_workspaces, list_items, map_workspace, map_item, resolve_sql_endpoints_for_workspace
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])

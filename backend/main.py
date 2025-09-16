@@ -1,14 +1,14 @@
 # backend/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.catalog.db import init_db
-from backend.routers import workspaces
-from backend.routers import sqldb
-from backend.routers import dbmeta
-from backend.routers import diagnostics_sqldb
-from backend.routers import introspect
-from backend.routers import agent_graph
-from backend.routers import catalog
+from catalog.db import init_db
+from routers import workspaces
+from routers import sqldb
+from routers import dbmeta
+from routers import diagnostics_sqldb
+from routers import introspect
+from routers import agent_graph
+from routers import catalog
 
 app = FastAPI(title="Fabric Explorer API", version="0.3.0")
 

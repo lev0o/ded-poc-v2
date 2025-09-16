@@ -3,10 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, delete
 from datetime import datetime, timezone
 
-from backend.catalog.db import get_session
-from backend.catalog.models import SqlEndpoint, Schema, Table, Column
-from backend.catalog.upsert import upsert_schemas, upsert_tables, upsert_columns
-from backend.sql.odbc import fetch_schemata, fetch_tables, fetch_columns
+from catalog.db import get_session
+from catalog.models import SqlEndpoint, Schema, Table, Column
+from catalog.upsert import upsert_schemas, upsert_tables, upsert_columns
+from sql.odbc import fetch_schemata, fetch_tables, fetch_columns
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/sqldb/{database_id}", tags=["introspect"])
 

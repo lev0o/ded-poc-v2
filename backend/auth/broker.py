@@ -1,6 +1,6 @@
 import os, msal, struct
 from typing import List
-from backend.settings import settings
+from settings import settings
 
 AUTHORITY = f"https://login.microsoftonline.com/{settings.tenant_id}"
 

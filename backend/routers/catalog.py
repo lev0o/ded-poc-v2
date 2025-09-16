@@ -5,9 +5,9 @@ from sqlmodel import select
 from typing import Dict, List, Optional
 import httpx
 
-from backend.catalog.db import get_session
-from backend.catalog.models import Workspace, SqlEndpoint, Schema, Table, Column
-from backend.settings import settings
+from catalog.db import get_session
+from catalog.models import Workspace, SqlEndpoint, Schema, Table, Column
+from settings import settings
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 

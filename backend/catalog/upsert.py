@@ -2,7 +2,7 @@
 from typing import Iterable
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.catalog.models import Workspace, Item, SqlEndpoint, Schema, Table, Column
+from catalog.models import Workspace, Item, SqlEndpoint, Schema, Table, Column
 
 async def upsert_workspaces(session: AsyncSession, rows: Iterable[dict]):
     for r in rows:

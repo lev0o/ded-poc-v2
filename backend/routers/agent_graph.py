@@ -21,11 +21,11 @@ from langchain_openai import AzureChatOpenAI
 from langgraph.prebuilt import create_react_agent
 
 # Your existing imports for tools
-from backend.settings import settings
-from backend.clients.fabric import list_workspaces, list_items
-from backend.sql.odbc import exec_query
-from backend.catalog.db import get_session
-from backend.catalog.models import SqlEndpoint
+from settings import settings
+from clients.fabric import list_workspaces, list_items
+from sql.odbc import exec_query
+from catalog.db import get_session
+from catalog.models import SqlEndpoint
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from contextlib import asynccontextmanager

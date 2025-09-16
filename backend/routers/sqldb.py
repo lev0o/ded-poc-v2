@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, delete
 
-from backend.catalog.db import get_session
-from backend.catalog.models import SqlEndpoint
-from backend.catalog.upsert import upsert_sql_endpoints
-from backend.clients.fabric import resolve_sql_endpoints_for_workspace
+from catalog.db import get_session
+from catalog.models import SqlEndpoint
+from catalog.upsert import upsert_sql_endpoints
+from clients.fabric import resolve_sql_endpoints_for_workspace
 
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 

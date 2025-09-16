@@ -3,8 +3,8 @@ from typing import Dict, Any, List, Optional, Tuple
 import logging
 import httpx
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential, retry_if_exception_type
-from backend.settings import settings
-from backend.auth.broker import broker, FABRIC_SCOPES
+from settings import settings
+from auth.broker import broker, FABRIC_SCOPES
 
 log = logging.getLogger(__name__)
 

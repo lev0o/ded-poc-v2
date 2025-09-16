@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.catalog.db import get_session
-from backend.catalog.models import SqlEndpoint
-from backend.sql.odbc import exec_query, choose_driver
+from catalog.db import get_session
+from catalog.models import SqlEndpoint
+from sql.odbc import exec_query, choose_driver
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/sqldb/{database_id}", tags=["diagnostics"])

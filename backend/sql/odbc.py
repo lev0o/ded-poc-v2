@@ -4,7 +4,7 @@ import os
 from functools import lru_cache
 import pyodbc
 import anyio
-from backend.auth.broker import sql_access_token_buffer
+from auth.broker import sql_access_token_buffer
 
 ACCESS_TOKEN_ATTR = 1256  # SQL_COPT_SS_ACCESS_TOKEN
 
