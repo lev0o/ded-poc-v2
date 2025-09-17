@@ -64,10 +64,19 @@ jobs:
     
     - name: Create frontend deployment package
       run: |
-        # Copy frontend files to root level for Azure deployment
+        # Copy frontend files to root level for Azure deployment, excluding node_modules
         cp -r frontend/* ./
+        # Remove node_modules and other unnecessary files
+        rm -rf node_modules
+        rm -rf backend
+        rm -rf .git
+        rm -rf .github
+        rm -f *.md
+        rm -f *.log
+        # Install production dependencies for Azure
+        npm ci --only=production
         # Create a zip file with frontend files at root level
-        zip -r frontend-deploy.zip . -x "node_modules/*" ".git/*" "*.log" "backend/*" "*.md" ".github/*"
+        zip -r frontend-deploy.zip .
     
     - name: Deploy Frontend to Azure App Service
       uses: azure/webapps-deploy@v2
