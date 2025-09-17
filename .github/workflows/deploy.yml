@@ -1,0 +1,75 @@
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        uv sync --frozen
+     
+    - name: Create deployment package
+      run: |
+        cd backend
+        # Create a zip file with all necessary files for Azure
+        zip -r ../backend-deploy.zip . -x "*.pyc" "__pycache__/*" ".git/*" "*.log"
+     
+    - name: Deploy to Azure App Service
+      uses: azure/webapps-deploy@v2
+      with:
+         app-name: 'ded-poc-backend'
+         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
+         package: './backend-deploy.zip'
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'frontend/package-lock.json'
+    
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Create deployment package
+      run: |
+        cd frontend
+        # Create a zip file with the built app
+        zip -r ../frontend-deploy.zip .next standalone public -x "node_modules/*" ".git/*" "*.log"
+    
+    - name: Deploy to Azure App Service
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'ded-poc-frontend'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FRONTEND }}
+        package: './frontend-deploy.zip'
