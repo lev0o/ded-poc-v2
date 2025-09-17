@@ -40,13 +40,29 @@ jobs:
         # Create a zip file with backend files at root level
         zip -r backend-deploy.zip .
     
+    - name: Configure Backend App Settings
+      uses: azure/appservice-settings@v1
+      with:
+        app-name: 'ded-poc-backend'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
+        app-settings-json: |
+          [
+            {
+              "name": "WEBSITE_WEBDEPLOY_USE_SCM",
+              "value": "true"
+            },
+            {
+              "name": "WEBSITE_RUN_FROM_PACKAGE",
+              "value": "1"
+            }
+          ]
+    
     - name: Deploy Backend to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'ded-poc-backend'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
         package: './backend-deploy.zip'
-        startup-command: 'uv run python startup.py'
 
   deploy-frontend:
     runs-on: ubuntu-latest
@@ -86,10 +102,26 @@ jobs:
         # Create a zip file with frontend files at root level
         zip -r frontend-deploy.zip .
     
+    - name: Configure Frontend App Settings
+      uses: azure/appservice-settings@v1
+      with:
+        app-name: 'ded-poc-frontend'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FRONTEND }}
+        app-settings-json: |
+          [
+            {
+              "name": "WEBSITE_WEBDEPLOY_USE_SCM",
+              "value": "true"
+            },
+            {
+              "name": "WEBSITE_RUN_FROM_PACKAGE",
+              "value": "1"
+            }
+          ]
+    
     - name: Deploy Frontend to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'ded-poc-frontend'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FRONTEND }}
         package: './frontend-deploy.zip'
-        startup-command: 'npm start'
