@@ -46,6 +46,7 @@ jobs:
         app-name: 'ded-poc-backend'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
         package: './backend-deploy.zip'
+        startup-command: 'uv run python startup.py'
 
   deploy-frontend:
     runs-on: ubuntu-latest
@@ -91,3 +92,4 @@ jobs:
         app-name: 'ded-poc-frontend'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FRONTEND }}
         package: './frontend-deploy.zip'
+        startup-command: 'npm start'
