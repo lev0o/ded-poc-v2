@@ -88,7 +88,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
     onSuccess: (resp) => {
       onAgentResult(resp);
       // append user + last ai text
-      const ai = resp.messages.findLast(m => m.type === "ai");
+      const ai = resp.messages.slice().reverse().find(m => m.type === "ai");
       if (ai) {
         // Create enhanced user message content that includes context info
         const userContent = context.length > 0 

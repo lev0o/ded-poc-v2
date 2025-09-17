@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import embed, { VisualizationSpec, Result } from "vega-embed";
+import { VisualizationSpec, Result } from "vega-embed";
+
+// Use require to avoid TypeScript issues
+const vegaEmbed = require("vega-embed");
 
 type Props = { 
   spec: VisualizationSpec;
@@ -26,9 +29,9 @@ export default function VegaChartWrapper({ spec, className }: Props) {
     // Create a completely clean spec object
     const cleanSpec = createCleanSpec(spec);
 
-    embed(el, cleanSpec, { actions: false })
-      .then((res) => { result = res; })
-      .catch((e) => console.error("vega error", e));
+    vegaEmbed.embed(el, cleanSpec, { actions: false })
+      .then((res: Result) => { result = res; })
+      .catch((e: any) => console.error("vega error", e));
 
     return () => {
       try { 

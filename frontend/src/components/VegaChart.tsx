@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import embed, { VisualizationSpec, Result } from "vega-embed";
+import { VisualizationSpec, Result } from "vega-embed";
+
+// Use require to avoid TypeScript issues
+const vegaEmbed = require("vega-embed");
 
 type Props = { spec: VisualizationSpec };
 
@@ -44,11 +47,11 @@ export default function VegaChart({ spec }: Props) {
       }
     };
 
-    embed(el, darkSpec, { actions: false })
-      .then((res) => { 
+    vegaEmbed.embed(el, darkSpec, { actions: false })
+      .then((res: Result) => { 
         result = res;
       })
-      .catch((e) => {
+      .catch((e: any) => {
         console.error("vega error", e);
       });
 

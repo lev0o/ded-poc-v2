@@ -18,12 +18,12 @@ export default function Chart({ spec, width, height }: Props) {
     containerRef.current.innerHTML = '';
 
     // Import vega-embed dynamically
-    import('vega-embed').then(({ embed }) => {
+    import('vega-embed').then((vegaEmbed) => {
       const chartSpec = { ...spec } as Record<string, unknown>;
       if (width) chartSpec.width = width;
       if (height) chartSpec.height = height;
 
-      embed(containerRef.current!, chartSpec, {
+      (vegaEmbed as any).embed(containerRef.current!, chartSpec, {
         actions: false,
         renderer: 'svg'
       }).catch(console.error);
