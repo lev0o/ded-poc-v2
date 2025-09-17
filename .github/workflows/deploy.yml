@@ -30,8 +30,15 @@ jobs:
       run: |
         # Copy backend files to root level for Azure deployment
         cp -r backend/* ./
+        # Remove unnecessary files and directories
+        rm -rf frontend
+        rm -rf .git
+        rm -rf .github
+        rm -f *.md
+        rm -f *.log
+        rm -rf __pycache__
         # Create a zip file with backend files at root level
-        zip -r backend-deploy.zip . -x "__pycache__/*" ".git/*" "*.log" "frontend/*" "*.md" ".github/*"
+        zip -r backend-deploy.zip .
     
     - name: Deploy Backend to Azure App Service
       uses: azure/webapps-deploy@v2
