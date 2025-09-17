@@ -26,18 +26,19 @@ jobs:
         cd backend
         uv sync --frozen
      
-    - name: Create deployment package
+    - name: Create backend deployment package
       run: |
-        cd backend
-        # Create a zip file with all necessary files for Azure
-        zip -r ../backend-deploy.zip . -x "*.pyc" "__pycache__/*" ".git/*" "*.log"
-     
-    - name: Deploy to Azure App Service
+        # Copy backend files to root level for Azure deployment
+        cp -r backend/* ./
+        # Create a zip file with backend files at root level
+        zip -r backend-deploy.zip . -x "__pycache__/*" ".git/*" "*.log" "frontend/*" "*.md" ".github/*"
+    
+    - name: Deploy Backend to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
-         app-name: 'ded-poc-backend'
-         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
-         package: './backend-deploy.zip'
+        app-name: 'ded-poc-backend'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
+        package: './backend-deploy.zip'
 
   deploy-frontend:
     runs-on: ubuntu-latest
@@ -61,13 +62,14 @@ jobs:
         cd frontend
         npm run build
     
-    - name: Create deployment package
+    - name: Create frontend deployment package
       run: |
-        cd frontend
-        # Create a zip file with the built app
-        zip -r ../frontend-deploy.zip .next standalone public -x "node_modules/*" ".git/*" "*.log"
+        # Copy frontend files to root level for Azure deployment
+        cp -r frontend/* ./
+        # Create a zip file with frontend files at root level
+        zip -r frontend-deploy.zip . -x "node_modules/*" ".git/*" "*.log" "backend/*" "*.md" ".github/*"
     
-    - name: Deploy to Azure App Service
+    - name: Deploy Frontend to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'ded-poc-frontend'
