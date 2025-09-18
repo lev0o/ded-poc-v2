@@ -405,6 +405,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
         </button>
       </div>
 
+
       {/* Scrollable Messages Area */}
       <div className="flex-1 overflow-hidden">
         <MessageArea turns={turns} />

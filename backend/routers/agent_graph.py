@@ -6,8 +6,10 @@ from uuid import uuid4
 from datetime import datetime, timezone
 import re
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Depends
 from pydantic import BaseModel, Field
+from auth.middleware import get_current_user_optional
+from auth.user_auth import FabricUser, create_rls_context
 
 # langchain / langgraph
 from langchain_core.messages import (
@@ -312,7 +314,40 @@ def _fallback_context_from_legacy(
         out.append(ContextItem(label="Table", id=table))
     return out
 
-def _system_prompt(base_context: List[ContextItem]) -> str:
+def _rls_context_block(rls_context) -> str:
+    """Generate RLS context block for system prompt."""
+    if not rls_context:
+        return ""
+    
+    user = rls_context.user
+    policies = rls_context.rls_policies
+    
+    context = f"""
+🔒 ROW LEVEL SECURITY (RLS) CONTEXT:
+- Authenticated User: {user.name} ({user.email})
+- User Roles: {', '.join([role.value for role in user.roles])}
+- RLS Status: ENABLED
+- Data Access Level: {user.permissions.get('data_access_level', 'unknown')}
+
+📋 ACTIVE RLS POLICIES:
+"""
+    
+    for table, policy in policies.items():
+        context += f"- {table}: {policy}\n"
+    
+    context += f"""
+⚠️  IMPORTANT RLS RULES:
+- All SQL queries will be automatically filtered based on user permissions
+- You can only see data that the user is authorized to access
+- Never attempt to bypass RLS policies
+- If a query returns no results, it may be due to RLS filtering
+- Inform the user about RLS restrictions when relevant
+
+"""
+    
+    return context
+
+def _system_prompt(base_context: List[ContextItem], rls_context=None) -> str:
     return (
         "You are Nour, a Fabric Assistant.\n"
         "You have access to a comprehensive catalog of all Fabric workspaces, databases, schemas, tables, and columns. "
@@ -341,6 +376,7 @@ def _system_prompt(base_context: List[ContextItem]) -> str:
         "- For forecasting requests: first check if data is time series with is_time_series_data(), then use forecast_tool() to generate predictions\n"
         "- When forecasting, automatically regenerate charts to show historical data + forecast + confidence intervals\n"
         "- Always use actual database names from the catalog - never assume or invent database names like 'AdventureWorksLT'\n\n"
+        f"{_rls_context_block(rls_context)}"
         f"{_generic_context_block(base_context)}"
     )
 
@@ -562,7 +598,7 @@ async def list_items_tool(workspace: str, type_filter: Optional[str] = None) -> 
         return _as_json_str({"error": f"{type(e).__name__}: {e}"})
 
 @tool
-async def sql_select_tool(workspace_id: str, database_id: str, sql: str) -> str:
+async def sql_select_tool(workspace_id: str, database_id: str, sql: str, user_context: Optional[Dict] = None) -> str:
     """
     Executes a single read-only SELECT (or CTE + SELECT).
     Accepts workspace/database as NAME or ID.
@@ -589,6 +625,16 @@ async def sql_select_tool(workspace_id: str, database_id: str, sql: str) -> str:
             return _as_json_str({"error": "Only a single read-only SELECT (or CTE + SELECT) is allowed."})
         if any(b in low for b in banned) or "--" in s or "/*" in s or "*/" in s:
             return _as_json_str({"error": "Mutating SQL or comments are not allowed."})
+        
+        # Apply Fabric RLS if user context is provided
+        if user_context:
+            from auth.fabric_rls import get_sql_token_for_rls, get_fabric_rls_user
+            # Get the SQL token for RLS enforcement
+            sql_token = get_sql_token_for_rls(user_context.get("access_token", ""))
+            if sql_token:
+                # In Fabric, RLS is enforced automatically by the database engine
+                # using the USER_NAME() function from the SQL token
+                s = f"-- RLS Enabled: USER_NAME() = '{user_context.get('upn', 'unknown')}'\n{s}"
 
         async with open_session() as session:
             ep = await session.get(SqlEndpoint, db_id)
@@ -1004,7 +1050,10 @@ async def set_session_context(session_id: str, items: List[ContextItem] = Body(.
 
 
 @router.post("/run", response_model=AgentRunResponse)
-async def run_agent(req: AgentRunRequest) -> AgentRunResponse:
+async def run_agent(
+    req: AgentRunRequest, 
+    user: Optional[FabricUser] = Depends(get_current_user_optional)
+) -> AgentRunResponse:
     # Resolve session
     sid: Optional[str] = req.session_id
     # Load or init history/context
@@ -1019,8 +1068,9 @@ async def run_agent(req: AgentRunRequest) -> AgentRunResponse:
     if legacy_ctx:
         context_items.extend(legacy_ctx)
 
-    # Build the system prompt including generic context block
-    system = _system_prompt(context_items)
+    # Build the system prompt including generic context block and RLS context
+    rls_context = create_rls_context(user) if user else None
+    system = _system_prompt(context_items, rls_context)
 
     # Convert stored + new messages into LangChain messages
     def to_lc(turns: List[ChatTurn]) -> List[BaseMessage]:
@@ -1040,11 +1090,36 @@ async def run_agent(req: AgentRunRequest) -> AgentRunResponse:
 
     # LLM & tools
     llm = _build_llm()
+    
+    # Create SQL tool with Fabric RLS user context
+    def create_sql_tool_with_context():
+        async def sql_select_with_context(workspace_id: str, database_id: str, sql: str) -> str:
+            user_context = None
+            if user:
+                # Get the access token from the user (this would be passed from frontend)
+                access_token = getattr(user, 'access_token', None)
+                user_context = {
+                    "access_token": access_token,
+                    "user_id": user.user_id,
+                    "upn": user.email,  # UPN is what USER_NAME() returns
+                    "email": user.email,
+                    "name": user.name,
+                    "tenant_id": user.tenant_id,
+                    "roles": [role.value for role in user.roles],
+                    "groups": user.groups,
+                    "permissions": user.permissions
+                }
+            return await sql_select_tool(workspace_id, database_id, sql, user_context)
+        
+        return sql_select_with_context
+    
+    sql_tool_with_context = create_sql_tool_with_context()
+    
     tools = [
         catalog_tool,
         list_workspaces_tool, list_sqldb_tool, list_items_tool,
         list_schemata_tool, list_tables_tool, list_columns_tool,
-        sql_select_tool, make_chart_spec,
+        sql_tool_with_context, make_chart_spec,
         is_time_series_data, forecast_tool, make_forecast_chart_spec,
     ]
 

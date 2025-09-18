@@ -10,6 +10,8 @@ from routers import introspect
 from routers import agent_graph
 from routers import catalog
 from routers import forecasting
+from routers import auth
+from routers import fabric_auth
 
 app = FastAPI(title="Fabric Explorer API", version="0.3.0")
 
@@ -25,6 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
+app.include_router(fabric_auth.router)
 app.include_router(workspaces.router)
 app.include_router(sqldb.router)
 app.include_router(dbmeta.router)
