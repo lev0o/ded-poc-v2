@@ -143,3 +143,28 @@ html, body, #__next { height: 100%; }
 table td, table th {
   background-color: inherit !important;
 }
+
+/* Seamless gradient animation for header - proven technique */
+.seamless-gradient {
+  background: linear-gradient(
+    90deg,
+    #161b22,
+    #1a1e23,
+    #1f2937,
+    rgba(30, 58, 138, 0.3),
+    rgba(124, 58, 237, 0.2),
+    #1a1e23,
+    #161b22
+  );
+  background-size: 200% 100%;
+  animation: gradient-flow 8s linear infinite;
+}
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}

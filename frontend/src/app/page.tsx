@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import CatalogExplorer from "@/components/CatalogExplorer";
 import CenterPane from "@/components/CenterPane";
 import ChatPanel from "@/components/ChatPanel";
+import Header from "@/components/Header";
+import AccountIcon from "@/components/AccountIcon";
 import { AgentRunResponse, ContextItem } from "@/lib/types";
 
 // Helper function to ensure data is serializable
@@ -43,6 +45,9 @@ export default function Page() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-[#0d1117] text-[#e6edf3]">
+      
+      {/* Top Header */}
+      <Header />
 
       {/* Mobile Navigation */}
       <div className="lg:hidden flex bg-[#161b22] h-10">
@@ -76,6 +81,9 @@ export default function Page() {
         >
           Chat
         </button>
+        <div className="px-2 py-1">
+          <AccountIcon />
+        </div>
       </div>
 
       {/* Desktop Layout */}
