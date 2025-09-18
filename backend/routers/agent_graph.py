@@ -314,7 +314,7 @@ def _fallback_context_from_legacy(
 
 def _system_prompt(base_context: List[ContextItem]) -> str:
     return (
-        "You are FabricAgent.\n"
+        "You are Nour, a Fabric Assistant.\n"
         "You have access to a comprehensive catalog of all Fabric workspaces, databases, schemas, tables, and columns. "
         "Use the catalog_tool to understand the full structure, then use specific tools to explore and query data.\n\n"
         "Core tasks:\n"

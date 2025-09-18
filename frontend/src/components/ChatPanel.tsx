@@ -8,6 +8,7 @@ import MessageArea from "./MessageArea";
 import MentionDropdown from "./MentionDropdown";
 import { useQuery } from "@tanstack/react-query";
 import { getCatalog } from "@/lib/api";
+import { ShinyText } from "@appletosolutions/reactbits";
 
 interface Props {
   context: ContextItem[];
@@ -23,6 +24,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
   const [mentionQuery, setMentionQuery] = useState<string>("");
   const [mentionPosition, setMentionPosition] = useState<{ top: number; left: number } | null>(null);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const { data: catalog } = useQuery({
     queryKey: ["catalog"],
@@ -87,20 +89,17 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
     },
     onSuccess: (resp) => {
       onAgentResult(resp);
-      // append user + last ai text
+      // Replace the "thinking" message with the actual AI response
       const ai = resp.messages.slice().reverse().find(m => m.type === "ai");
       if (ai) {
-        // Create enhanced user message content that includes context info
-        const userContent = context.length > 0 
-          ? `${input}\n\n*Context: ${context.map(c => `${c.label}: ${getContextDisplayName(c)}`).join(', ')}*`
-          : input;
-        
-        setTurns(t => [
-          ...t,
-          { role: "user", content: userContent },
-          { role: "assistant", content: ai.content }
-        ]);
-        setInput("");
+        setTurns(t => {
+          const newTurns = [...t];
+          // Replace the last "thinking" message with the actual AI response
+          if (newTurns.length > 0 && newTurns[newTurns.length - 1].content === "thinking") {
+            newTurns[newTurns.length - 1] = { role: "assistant", content: ai.content };
+          }
+          return newTurns;
+        });
         // Auto-switch to results on mobile
         if (onShowResults) {
           onShowResults();
@@ -111,7 +110,26 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
 
   const handleSend = () => {
     if (!input.trim()) return;
-    send(input.trim());
+    
+    const message = input.trim();
+    
+    // Create enhanced user message content that includes context info
+    const userContent = context.length > 0 
+      ? `${message}\n\n*Context: ${context.map(c => `${c.label}: ${getContextDisplayName(c)}`).join(', ')}*`
+      : message;
+    
+    // Immediately add user message and "thinking" placeholder to turns
+    setTurns(t => [
+      ...t,
+      { role: "user", content: userContent },
+      { role: "assistant", content: "thinking" }
+    ]);
+    
+    // Clear input immediately
+    setInput("");
+    
+    // Send the request
+    send(message);
   };
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -329,18 +347,27 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-[#161b22]">
       {/* Header */}
-      <div className="flex items-center justify-between px-2 py-2 border-b border-[#30363d] flex-shrink-0">
+      <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
         <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
           <svg className="w-4 h-4 text-[#58a6ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
-          AI Assistant
+          Nour - Fabric Assistant
+          <button
+            onClick={() => setShowInfoModal(true)}
+            className="text-[#8b949e] hover:text-[#e6edf3] transition-colors p-1"
+            title="Learn about Nour's capabilities"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
         </h2>
         <button
           onClick={onNewChat}
-          className="text-xs rounded px-2 py-1 transition-colors font-medium bg-[#21262d] text-[#e6edf3] hover:bg-[#30363d] shadow-sm"
+          className="text-xs rounded px-2 py-1 transition-colors font-medium bg-[#0d1117] text-[#e6edf3] hover:bg-[#161b22]"
         >
           New chat
         </button>
@@ -351,7 +378,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
       <MessageArea turns={turns} />
 
       {/* Input Section */}
-      <div className="border-t border-[#30363d] p-3 flex-shrink-0">
+      <div className="p-3 flex-shrink-0">
         <div className="relative">
           <textarea
             ref={inputRef}
@@ -360,7 +387,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
             onKeyPress={handleKeyPress}
             onKeyDown={handleKeyDown}
             placeholder="Type a message… Use @ to mention items (workspace, database, schema, table, column)."
-            className="w-full h-24 resize-none rounded border border-[#30363d] bg-[#0d1117] text-[#e6edf3] p-2 focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb] transition-colors"
+            className="w-full h-20 resize-none rounded border border-[#30363d] bg-[#21262d] text-[#e6edf3] p-2 focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb] transition-colors"
           />
           {showMentionDropdown && mentionPosition && (
             <MentionDropdown
@@ -396,6 +423,58 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
           </div>
         </div>
       </div>
+
+      {/* Info Modal */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#0d1117] border border-[#30363d] rounded-lg p-6 max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#f0f6fc]">Nour - Fabric Assistant</h3>
+              <button
+                onClick={() => setShowInfoModal(false)}
+                className="text-[#8b949e] hover:text-[#e6edf3] transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-3 text-sm text-[#e6edf3]">
+              <p className="text-[#8b949e] mb-3">Nour can help you with:</p>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-[#58a6ff]">•</span>
+                  <span>Explore Fabric workspaces, databases, schemas, tables, and columns</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#58a6ff]">•</span>
+                  <span>Execute read-only SQL queries to analyze data</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#58a6ff]">•</span>
+                  <span>Generate interactive charts and visualizations</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#58a6ff]">•</span>
+                  <span>Answer questions about your data structure</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#58a6ff]">•</span>
+                  <span>Help with data analysis and insights</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#58a6ff]">•</span>
+                  <span>Provide guidance on Fabric best practices</span>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-[#161b22] rounded border border-[#30363d]">
+                <p className="text-[#58a6ff] font-medium mb-1">💡 Pro Tip:</p>
+                <p className="text-xs">Use @ mentions to reference specific items in your queries!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

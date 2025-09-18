@@ -24,7 +24,7 @@ function sanitizeForSerialization(obj: any): any {
 
 export default function Page() {
   const [context, setContext] = useState<ContextItem[]>([]);
-  const [last, setLast] = useState<AgentRunResponse | null>(null);
+  const [results, setResults] = useState<AgentRunResponse[]>([]);
   const [activePane, setActivePane] = useState<'explorer' | 'chat' | 'center'>('center');
 
   const addContext = (item: ContextItem) => {
@@ -38,14 +38,14 @@ export default function Page() {
 
   const handleAgentResult = (resp: AgentRunResponse) => {
     const cleanResponse = sanitizeForSerialization(resp) as AgentRunResponse;
-    setLast(cleanResponse);
+    setResults(prev => [...prev, cleanResponse]);
   };
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-[#0d1117] text-[#e6edf3]">
 
       {/* Mobile Navigation */}
-      <div className="lg:hidden flex border-b border-[#30363d] bg-[#0d1117]">
+      <div className="lg:hidden flex bg-[#161b22] h-10">
         <button
           onClick={() => setActivePane('explorer')}
           className={`flex-1 px-4 py-2 text-sm font-semibold transition-colors ${
@@ -80,17 +80,17 @@ export default function Page() {
 
       {/* Desktop Layout */}
       <div className="hidden lg:grid lg:grid-cols-[320px_1fr_380px] flex-1 overflow-hidden">
-        <aside className="border-r border-[#30363d] bg-[#0d1117] h-full overflow-hidden">
+        <aside className="bg-[#161b22] h-full overflow-hidden">
           <CatalogExplorer />
         </aside>
 
-        <main className="bg-[#0d1117] h-full overflow-hidden">
+        <main className="bg-[#0a0d12] h-full overflow-hidden">
           <div className="h-full overflow-y-auto">
-            <CenterPane last={last} />
+            <CenterPane results={results} />
           </div>
         </main>
 
-        <aside className="border-l border-[#30363d] bg-[#0d1117] h-full overflow-hidden">
+        <aside className="bg-[#161b22] h-full overflow-hidden">
           <ChatPanel
             context={context}
             onContextChange={setContext}
@@ -103,19 +103,19 @@ export default function Page() {
       {/* Mobile Layout */}
       <div className="lg:hidden flex-1 overflow-hidden">
         {activePane === 'explorer' && (
-          <div className="h-full bg-[#0d1117] overflow-hidden">
+          <div className="h-full bg-[#161b22] overflow-hidden">
             <CatalogExplorer />
           </div>
         )}
         {activePane === 'center' && (
-          <div className="h-full bg-[#0d1117] overflow-hidden">
+          <div className="h-full bg-[#0a0d12] overflow-hidden">
             <div className="h-full overflow-y-auto">
-              <CenterPane last={last} />
+              <CenterPane results={results} />
             </div>
           </div>
         )}
         {activePane === 'chat' && (
-          <div className="h-full bg-[#0d1117] overflow-hidden">
+          <div className="h-full bg-[#161b22] overflow-hidden">
             <ChatPanel
               context={context}
               onContextChange={setContext}

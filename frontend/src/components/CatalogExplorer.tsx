@@ -141,8 +141,8 @@ export default function CatalogExplorer({}: Props) {
 
   if (isLoading) {
     return (
-      <div className="h-full overflow-auto">
-        <div className="flex items-center justify-between px-2 py-2 border-b border-[#30363d]">
+      <div className="h-full overflow-auto bg-[#0a0d12]">
+        <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
             <Building2 size={16} className="text-[#58a6ff]" />
             Fabric Explorer
@@ -157,8 +157,8 @@ export default function CatalogExplorer({}: Props) {
 
   if (error) {
     return (
-      <div className="h-full overflow-auto">
-        <div className="flex items-center justify-between px-2 py-2 border-b border-[#30363d]">
+      <div className="h-full overflow-auto bg-[#0a0d12]">
+        <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
             <Building2 size={16} className="text-[#58a6ff]" />
             Fabric Explorer
@@ -173,8 +173,8 @@ export default function CatalogExplorer({}: Props) {
 
   if (!catalog) {
     return (
-      <div className="h-full overflow-auto">
-        <div className="flex items-center justify-between px-2 py-2 border-b border-[#30363d]">
+      <div className="h-full overflow-auto bg-[#0a0d12]">
+        <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
             <Building2 size={16} className="text-[#58a6ff]" />
             Fabric Explorer
@@ -188,8 +188,8 @@ export default function CatalogExplorer({}: Props) {
   }
 
   return (
-    <div className="h-full overflow-auto relative">
-      <div className="flex items-center justify-between px-2 py-2 border-b border-[#30363d]">
+    <div className="h-full overflow-auto relative bg-[#0a0d12]">
+      <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
         <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
           <Building2 size={16} className="text-[#58a6ff]" />
           Fabric Explorer
@@ -211,10 +211,10 @@ export default function CatalogExplorer({}: Props) {
                 }
               }}
               disabled={isRefreshing}
-               className={`text-xs rounded-l px-2 py-1 transition-colors font-medium border-r border-[#2d2d30] ${
+               className={`text-xs rounded-l px-2 py-1 transition-colors font-medium ${
                  isRefreshing 
                    ? 'bg-[#161b22] text-[#e6edf3] cursor-not-allowed' 
-                   : 'bg-[#21262d] text-[#e6edf3] hover:bg-[#30363d] shadow-sm'
+                   : 'bg-[#0d1117] text-[#e6edf3] hover:bg-[#161b22]'
                }`}
               title={isRefreshing ? "Refreshing..." : "Refresh active workspaces"}
             >
@@ -229,10 +229,10 @@ export default function CatalogExplorer({}: Props) {
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               disabled={isRefreshing}
-               className={`text-xs rounded-r px-1 py-1 transition-colors font-medium ${
+               className={`text-xs rounded-r px-2 py-1 transition-colors font-medium ${
                  isRefreshing 
                    ? 'bg-[#161b22] text-[#e6edf3] cursor-not-allowed' 
-                   : 'bg-[#21262d] text-[#e6edf3] hover:bg-[#30363d] shadow-sm'
+                   : 'bg-[#0d1117] text-[#e6edf3] hover:bg-[#161b22]'
                }`}
               title="More refresh options"
             >
@@ -258,7 +258,7 @@ export default function CatalogExplorer({}: Props) {
                   }
                 }}
                 disabled={isRefreshing}
-                className="w-full text-left px-3 py-2 text-xs text-[#e6edf3] hover:bg-[#21262d] transition-colors flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-[#e6edf3] hover:bg-[#0d1117] transition-colors flex items-center gap-2"
                 title="Refresh all workspaces"
               >
                 <RefreshCw size={12} />

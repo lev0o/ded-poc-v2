@@ -107,7 +107,7 @@ const VegaChart = forwardRef<VegaChartRef, Props>(({ spec }, ref) => {
     };
   }, [spec]);
 
-  return <div ref={chartRef} className="bg-[#0d1117] inline-block" />;
+  return <div ref={chartRef} className="bg-[#0d1117] block overflow-auto" />;
 });
 
 VegaChart.displayName = 'VegaChart';
