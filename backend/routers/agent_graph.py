@@ -330,7 +330,12 @@ def _system_prompt(base_context: List[ContextItem]) -> str:
         "- Prefer names over IDs when possible\n"
         "- If something is ambiguous, ask ONE clarifying question, then proceed\n"
         "- Mention which tables/columns you used\n"
-        "- If any tool returns {\"error\":...}, do not retry blindly; explain and suggest the next step\n\n"
+        "- If any tool returns {\"error\":...}, do not retry blindly; explain and suggest the next step\n"
+        "- NEVER include SQL queries, table data, or SQL results in your text response unless specifically asked\n"
+        "- NEVER format data as tables or show sample data in your response - use sql_select_tool instead\n"
+        "- NEVER show SQL code in your response unless user explicitly asks to see the SQL\n"
+        "- When user asks for data, use sql_select_tool to execute queries and return structured data\n"
+        "- Keep your text responses focused on explanations, guidance, and next steps - not data display\n\n"
         f"{_generic_context_block(base_context)}"
     )
 
