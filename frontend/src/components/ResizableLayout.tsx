@@ -26,6 +26,8 @@ export default function ResizableLayout({
   const [rightWidth, setRightWidth] = useState(defaultRightWidth);
   const [isDraggingLeft, setIsDraggingLeft] = useState(false);
   const [isDraggingRight, setIsDraggingRight] = useState(false);
+  const [isHoveringLeft, setIsHoveringLeft] = useState(false);
+  const [isHoveringRight, setIsHoveringRight] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDownLeft = (e: React.MouseEvent) => {
@@ -105,22 +107,56 @@ export default function ResizableLayout({
           {leftPanel}
         </div>
 
-        {/* Left Resize Handle */}
-        <div
-          className="w-1 bg-transparent hover:bg-[#1f6feb]/50 cursor-col-resize transition-colors flex-shrink-0"
-          onMouseDown={handleMouseDownLeft}
-        />
+      {/* Left Resize Handle */}
+      <div
+        className="cursor-col-resize absolute z-10"
+        onMouseDown={handleMouseDownLeft}
+        onMouseEnter={() => setIsHoveringLeft(true)}
+        onMouseLeave={() => setIsHoveringLeft(false)}
+        style={{ 
+          width: '4px',
+          height: 'calc(100% - 48px)',
+          backgroundColor: 'transparent',
+          left: `${leftWidth - 2}px`,
+          top: '48px'
+        }}
+      >
+        {/* Blue line overlay on hover */}
+        {isHoveringLeft && (
+          <div 
+            className="absolute inset-0 bg-[#0078d4]"
+            style={{ width: '2px', left: '1px' }}
+          />
+        )}
+      </div>
 
         {/* Center Panel */}
         <div className="flex-1 bg-[#0d1117] min-w-0">
           {centerPanel}
         </div>
 
-        {/* Right Resize Handle */}
-        <div
-          className="w-1 bg-transparent hover:bg-[#1f6feb]/50 cursor-col-resize transition-colors flex-shrink-0"
-          onMouseDown={handleMouseDownRight}
-        />
+      {/* Right Resize Handle */}
+      <div
+        className="cursor-col-resize absolute z-10"
+        onMouseDown={handleMouseDownRight}
+        onMouseEnter={() => setIsHoveringRight(true)}
+        onMouseLeave={() => setIsHoveringRight(false)}
+        style={{ 
+          width: '4px',
+          height: 'calc(100% - 48px)',
+          backgroundColor: 'transparent',
+          right: `${rightWidth - 2}px`,
+          top: '48px'
+        }}
+      >
+        {/* Blue line overlay on hover */}
+        {isHoveringRight && (
+          <div 
+            className="absolute inset-0 bg-[#0078d4]"
+            style={{ width: '2px', right: '1px' }}
+          />
+        )}
+      </div>
 
         {/* Right Panel */}
         <div
