@@ -14,6 +14,7 @@ import {
   ChevronRight, 
   CheckCircle, 
   AlertCircle, 
+  AlertTriangle,
   XCircle, 
   Clock,
   ChevronDown as DropdownIcon,
@@ -36,6 +37,12 @@ function getWorkspaceStatus(workspace: WorkspaceCatalog) {
         icon: <CheckCircle size={12} className="text-[#3fb950]" />,
         className: "text-[#e6edf3]",
         title: "Active workspace"
+      };
+    case 'inactive':
+      return {
+        icon: <AlertTriangle size={12} className="text-[#f85149]" />,
+        className: "text-[#e6edf3] opacity-60",
+        title: "Workspace capacity is paused or inactive"
       };
     case 'suspended':
       return {
@@ -148,7 +155,7 @@ export default function CatalogExplorer({}: Props) {
             Fabric Explorer
           </h2>
         </div>
-        <div className="bg-[#21262d] mx-2 rounded text-center py-2">
+        <div className="bg-[#21262d] text-center py-2">
           <div className="text-xs text-[#8b949e]">Loading catalog...</div>
         </div>
       </div>
@@ -164,7 +171,7 @@ export default function CatalogExplorer({}: Props) {
             Fabric Explorer
           </h2>
         </div>
-        <div className="bg-[#21262d] mx-2 rounded text-center py-2">
+        <div className="bg-[#21262d] text-center py-2">
           <div className="text-xs text-[#f85149]">Error loading catalog: {error.message}</div>
         </div>
       </div>
@@ -180,7 +187,7 @@ export default function CatalogExplorer({}: Props) {
             Fabric Explorer
           </h2>
         </div>
-        <div className="bg-[#21262d] mx-2 rounded text-center py-2">
+        <div className="bg-[#21262d] text-center py-2">
           <div className="text-xs text-[#8b949e]">No catalog data available</div>
         </div>
       </div>
@@ -325,7 +332,7 @@ function WorkspaceNode({
   children?: React.ReactNode;
 }) {
   const status = getWorkspaceStatus(ws);
-  const isInactive = ws.state?.toLowerCase() === 'suspended' || ws.state?.toLowerCase() === 'deleted';
+  const isInactive = ws.state?.toLowerCase() === 'inactive' || ws.state?.toLowerCase() === 'suspended' || ws.state?.toLowerCase() === 'deleted';
   
   return (
     <div className={`${isInactive ? 'opacity-60' : ''}`}>

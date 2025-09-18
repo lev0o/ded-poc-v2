@@ -331,6 +331,8 @@ def _system_prompt(base_context: List[ContextItem]) -> str:
         "- If something is ambiguous, ask ONE clarifying question, then proceed\n"
         "- Mention which tables/columns you used\n"
         "- If any tool returns {\"error\":...}, do not retry blindly; explain and suggest the next step\n"
+        "- NEVER query inactive workspaces unless the user explicitly requests it\n"
+        "- If a workspace shows as inactive (paused capacity), inform the user and suggest using an active workspace instead\n"
         "- NEVER include SQL queries, table data, or SQL results in your text response unless specifically asked\n"
         "- NEVER format data as tables or show sample data in your response - use sql_select_tool instead\n"
         "- NEVER show SQL code in your response unless user explicitly asks to see the SQL\n"
