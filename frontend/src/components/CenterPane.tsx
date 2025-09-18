@@ -28,6 +28,74 @@ function sanitizeData(data: any): any {
   return data;
 }
 
+// Download functions
+function downloadTableAsCSV(table: { columns: string[]; rows: any[]; sql?: string }) {
+  const headers = table.columns.join(',');
+  const rows = table.rows.map(row => 
+    table.columns.map(col => {
+      const value = row[col];
+      // Escape CSV values that contain commas or quotes
+      if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    }).join(',')
+  );
+  
+  const csvContent = [headers, ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `table_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
+  link.click();
+}
+
+function downloadChartAsPNG() {
+  // Find the SVG element in the chart
+  const svgElement = document.querySelector('.vega-embed svg') as SVGElement;
+  if (!svgElement) return;
+  
+  // Create a canvas element
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  
+  // Set canvas size to match SVG
+  const rect = svgElement.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  
+  // Convert SVG to PNG
+  const svgData = new XMLSerializer().serializeToString(svgElement);
+  const img = new Image();
+  
+  img.onload = () => {
+    ctx.fillStyle = '#0d1117'; // Background color
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    
+    // Download the image
+    const link = document.createElement('a');
+    link.download = `chart_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+  
+  img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+}
+
+function downloadChartAsSVG() {
+  const svgElement = document.querySelector('.vega-embed svg') as SVGElement;
+  if (!svgElement) return;
+  
+  const svgData = new XMLSerializer().serializeToString(svgElement);
+  const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `chart_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.svg`;
+  link.click();
+}
+
 export default function CenterPane({ last }: Props) {
   if (!last) {
     return (
@@ -55,7 +123,21 @@ export default function CenterPane({ last }: Props) {
 
       {table && (
         <section>
-          <h3 className="text-sm font-bold mb-2 text-[#f0f6fc]">Data ({table.rowCount} rows)</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-bold text-[#f0f6fc]">Data ({table.rowCount} rows)</h3>
+            <button
+              onClick={() => downloadTableAsCSV(table)}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-[#e6edf3] transition-colors"
+              title="Download as CSV"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7,10 12,15 17,10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              CSV
+            </button>
+          </div>
           <div className="inline-block rounded border border-[#30363d] overflow-hidden">
             <DataTable columns={table.columns} rows={table.rows} />
           </div>
@@ -64,7 +146,35 @@ export default function CenterPane({ last }: Props) {
 
       {chart && (
         <section>
-          <h3 className="text-sm font-bold mb-2 text-[#f0f6fc]">Chart</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-bold text-[#f0f6fc]">Chart</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={downloadChartAsPNG}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-[#e6edf3] transition-colors"
+                title="Download as PNG"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21,15 16,10 5,21"/>
+                </svg>
+                PNG
+              </button>
+              <button
+                onClick={downloadChartAsSVG}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-[#e6edf3] transition-colors"
+                title="Download as SVG"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7,10 12,15 17,10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                SVG
+              </button>
+            </div>
+          </div>
           <div className="inline-block rounded border border-[#30363d] overflow-hidden bg-[#0d1117]">
             <div className="p-3">
               <VegaChart spec={sanitizeData(chart)} />
