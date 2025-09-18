@@ -18,13 +18,12 @@ export default function MessageArea({ turns, className = "" }: Props) {
   }, [turns]);
 
   return (
-    <div className={`flex-1 overflow-hidden ${className}`}>
-      <div className="h-full overflow-y-auto no-scrollbar-space">
+    <div className={`h-full overflow-y-auto ${className}`}>
         <div className="space-y-0">
                   {turns.map((t, i) => (
-                    <div key={i} className={`w-full px-3 py-2 shadow-sm ${t.role === "user" ? "bg-[#21262d]" : "bg-[#0d1117] ${i < turns.length - 1 ? 'border-b border-[#21262d]' : ''}"}`}>
+                    <div key={i} className={`w-full px-3 py-2 shadow-sm ${t.role === "user" ? "bg-[#1f6feb]" : "bg-[#0d1117]"}`}>
                       <div className={`flex items-center gap-2 mb-1 ${t.role === "user" ? "justify-end" : "justify-start"}`}>
-                        <div className={`text-xs font-semibold ${t.role === "user" ? "text-[#58a6ff]" : "text-[#58a6ff]"}`}>
+                        <div className={`text-xs font-semibold ${t.role === "user" ? "text-white" : "text-[#58a6ff]"}`}>
                           {t.role === "user" ? "You" : "Nour"}
                         </div>
                       </div>
@@ -161,7 +160,6 @@ export default function MessageArea({ turns, className = "" }: Props) {
           {/* Scroll target for auto-scroll */}
           <div ref={messagesEndRef} />
         </div>
-      </div>
     </div>
   );
 }

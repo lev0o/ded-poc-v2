@@ -18,6 +18,11 @@ import {
   XCircle, 
   Clock,
   ChevronDown as DropdownIcon,
+  Pause,
+  Play,
+  Power,
+  PowerOff,
+  Zap,
   Server,
   HardDrive,
   Cloud,
@@ -37,33 +42,57 @@ function getWorkspaceStatus(workspace: WorkspaceCatalog) {
   switch (state) {
     case 'active':
       return {
-        icon: <CheckCircle size={12} className="text-[#3fb950]" />,
+        icon: <Power size={14} className="text-[#3fb950]" />,
         className: "text-[#e6edf3]",
-        title: "Active workspace"
+        title: "Active workspace - Ready to use"
       };
     case 'inactive':
       return {
-        icon: <AlertTriangle size={12} className="text-[#f85149]" />,
+        icon: <Pause size={14} className="text-[#ffa657]" />,
         className: "text-[#e6edf3] opacity-60",
-        title: "Workspace capacity is paused or inactive"
+        title: "Inactive workspace - Capacity paused"
+      };
+    case 'paused':
+      return {
+        icon: <Pause size={14} className="text-[#ffa657]" />,
+        className: "text-[#e6edf3] opacity-60",
+        title: "Paused workspace - Capacity suspended"
       };
     case 'suspended':
       return {
-        icon: <AlertCircle size={12} className="text-[#ffa657]" />,
+        icon: <PowerOff size={14} className="text-[#f85149]" />,
         className: "text-[#e6edf3] opacity-60",
-        title: "Suspended workspace"
+        title: "Suspended workspace - Temporarily disabled"
       };
     case 'deleted':
       return {
-        icon: <XCircle size={12} className="text-[#f85149]" />,
+        icon: <XCircle size={14} className="text-[#f85149]" />,
         className: "text-[#e6edf3] opacity-40",
-        title: "Deleted workspace"
+        title: "Deleted workspace - No longer available"
+      };
+    case 'provisioning':
+      return {
+        icon: <Zap size={14} className="text-[#58a6ff]" />,
+        className: "text-[#e6edf3] opacity-80",
+        title: "Provisioning workspace - Setting up"
+      };
+    case 'starting':
+      return {
+        icon: <Play size={14} className="text-[#58a6ff]" />,
+        className: "text-[#e6edf3] opacity-80",
+        title: "Starting workspace - Coming online"
+      };
+    case 'stopping':
+      return {
+        icon: <PowerOff size={14} className="text-[#ffa657]" />,
+        className: "text-[#e6edf3] opacity-80",
+        title: "Stopping workspace - Shutting down"
       };
     default:
       return {
-        icon: <Clock size={12} className="text-[#58a6ff]" />,
+        icon: <Clock size={14} className="text-[#8b949e]" />,
         className: "text-[#e6edf3] opacity-80",
-        title: "Unknown workspace status"
+        title: "Unknown workspace status - Check connection"
       };
   }
 }
@@ -206,7 +235,7 @@ export default function CatalogExplorer({}: Props) {
 
   if (isLoading) {
     return (
-          <div className="h-full overflow-auto bg-[#161b22] no-scrollbar-space">
+          <div className="h-full overflow-auto bg-[#161b22]">
         <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
               <Building2 size={12} className="text-[#58a6ff]" />
@@ -222,7 +251,7 @@ export default function CatalogExplorer({}: Props) {
 
   if (error) {
     return (
-          <div className="h-full overflow-auto bg-[#161b22] no-scrollbar-space">
+          <div className="h-full overflow-auto bg-[#161b22]">
         <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
               <Building2 size={12} className="text-[#58a6ff]" />
@@ -238,7 +267,7 @@ export default function CatalogExplorer({}: Props) {
 
   if (!catalog) {
     return (
-          <div className="h-full overflow-auto bg-[#161b22] no-scrollbar-space">
+          <div className="h-full overflow-auto bg-[#161b22]">
         <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
               <Building2 size={12} className="text-[#58a6ff]" />
@@ -253,8 +282,9 @@ export default function CatalogExplorer({}: Props) {
   }
 
   return (
-        <div className="h-full overflow-auto relative bg-[#161b22] no-scrollbar-space">
-      <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
+    <div className="h-full flex flex-col bg-[#161b22]">
+      {/* Fixed Header */}
+      <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
         <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
               <Building2 size={12} className="text-[#58a6ff]" />
           Fabric Explorer
@@ -334,13 +364,15 @@ export default function CatalogExplorer({}: Props) {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <div className="bg-[#2d333b] text-center py-2">
-          <div className="text-xs text-[#a8b2d1]">
-            {catalog.total_workspaces} workspaces • {catalog.total_databases} databases • {catalog.total_tables} tables • {catalog.total_columns} columns
-          </div>
+      {/* Fixed Statistics Line */}
+      <div className="flex-shrink-0 bg-[#2d333b] text-center py-2">
+        <div className="text-xs text-[#a8b2d1]">
+          {catalog.total_workspaces} workspaces • {catalog.total_databases} databases • {catalog.total_tables} tables • {catalog.total_columns} columns
         </div>
+      </div>
 
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-auto">
         <div className="space-y-0">
           {catalog.workspaces.map((ws: WorkspaceCatalog) => (
             <WorkspaceNode 
@@ -399,14 +431,16 @@ function WorkspaceNode({
       <div className="flex items-center hover:bg-[#161b22]">
         <button 
           onClick={onToggle} 
-          className={`flex items-center gap-1.5 font-medium hover:underline text-sm px-2 py-1 w-full text-left ${status.className}`}
+          className={`flex items-center gap-1.5 font-medium hover:underline text-sm px-2 py-1 flex-1 text-left ${status.className}`}
           title={status.title}
         >
           {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <Building2 size={14} className="text-[#58a6ff]" />
-          {status.icon}
           <span className="truncate">{ws.name}</span>
         </button>
+        <div className="flex-shrink-0 px-2" title={status.title}>
+          {status.icon}
+        </div>
       </div>
       {expanded && <div className="ml-4">{children}</div>}
     </div>

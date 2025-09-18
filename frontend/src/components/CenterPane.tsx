@@ -81,14 +81,14 @@ function ResultContent({ result }: { result: AgentRunResponse }) {
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {table?.sql && (
         <section>
-          <h4 className="text-sm font-bold mb-2 pb-1 border-b border-[#30363d] text-[#f0f6fc]">SQL</h4>
+          <h4 className="text-sm font-bold mb-2 pb-1 text-[#f0f6fc]">SQL</h4>
           <pre className="rounded bg-[#0d1117] border border-[#30363d] p-3 overflow-auto"><code className="text-[#e6edf3]">{table.sql}</code></pre>
         </section>
       )}
 
       {table && (
         <section>
-          <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#30363d]">
+          <div className="flex items-center justify-between mb-2 pb-1">
             <h4 className="text-sm font-bold text-[#f0f6fc]">Data ({table.rowCount} rows)</h4>
             <button
               onClick={() => downloadTableAsCSV(table)}
@@ -109,7 +109,7 @@ function ResultContent({ result }: { result: AgentRunResponse }) {
 
       {chart && (
         <section>
-          <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#30363d]">
+          <div className="flex items-center justify-between mb-2 pb-1">
             <h4 className="text-sm font-bold text-[#f0f6fc]">Chart</h4>
             <div className="flex items-center gap-2">
               <button
