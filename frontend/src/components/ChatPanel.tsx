@@ -109,9 +109,14 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
   });
 
   const handleSend = () => {
-    if (!input.trim()) return;
+    console.log('handleSend called with input:', input);
+    if (!input.trim()) {
+      console.log('Empty input, returning');
+      return;
+    }
     
     const message = input.trim();
+    console.log('Sending message:', message);
     
     // Create enhanced user message content that includes context info
     const userContent = context.length > 0 
@@ -266,75 +271,97 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
 
   // Handle key press
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    console.log('handleKeyPress called with key:', e.key);
     if (e.key === 'Enter' && !e.shiftKey) {
+      console.log('Enter key detected, preventing default and calling handleSend');
       e.preventDefault();
       if (input.trim() && !isPending) {
         handleSend();
+      } else {
+        console.log('Not sending - input:', input.trim(), 'isPending:', isPending);
       }
     }
   };
 
   // Handle backspace for atomic @ mention deletion
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Backspace') {
-      const textarea = e.currentTarget;
-      const cursorPos = textarea.selectionStart;
-      const textBeforeCursor = input.substring(0, cursorPos);
-      
-      // Check if cursor is right after a complete @ mention
-      // Only trigger if cursor is at the very end of a mention (no characters after it)
-      let bestMatch = null;
-      let bestContextItem = null;
-      
-      // Check if cursor is at the end of the text or followed by a space
-      const textAfterCursor = input.substring(cursorPos);
-      const isAtEndOfMention = textAfterCursor === '' || textAfterCursor.startsWith(' ');
-      
-      if (isAtEndOfMention) {
-        for (const contextItem of context) {
-          const displayName = getContextDisplayName(contextItem);
-          const mentionPattern = `@${displayName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`;
-          const regex = new RegExp(mentionPattern);
-          const match = textBeforeCursor.match(regex);
-          
-          if (match && (!bestMatch || match[0].length > bestMatch[0].length)) {
-            bestMatch = match;
-            bestContextItem = contextItem;
-          }
+    console.log('handleKeyDown called with key:', e.key);
+    
+    // Handle Enter key
+    if (e.key === 'Enter' && !e.shiftKey) {
+      console.log('Enter key detected in handleKeyDown, preventing default and calling handleSend');
+      e.preventDefault();
+      if (input.trim() && !isPending) {
+        handleSend();
+      } else {
+        console.log('Not sending - input:', input.trim(), 'isPending:', isPending);
+      }
+      return;
+    }
+    
+    // Only handle Backspace key, let other keys pass through
+    if (e.key !== 'Backspace') {
+      console.log('Not Backspace or Enter, returning early');
+      return;
+    }
+
+    const textarea = e.currentTarget;
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = input.substring(0, cursorPos);
+    
+    // Check if cursor is right after a complete @ mention
+    // Only trigger if cursor is at the very end of a mention (no characters after it)
+    let bestMatch = null;
+    let bestContextItem = null;
+    
+    // Check if cursor is at the end of the text or followed by a space
+    const textAfterCursor = input.substring(cursorPos);
+    const isAtEndOfMention = textAfterCursor === '' || textAfterCursor.startsWith(' ');
+    
+    if (isAtEndOfMention) {
+      for (const contextItem of context) {
+        const displayName = getContextDisplayName(contextItem);
+        const mentionPattern = `@${displayName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`;
+        const regex = new RegExp(mentionPattern);
+        const match = textBeforeCursor.match(regex);
+        
+        if (match && (!bestMatch || match[0].length > bestMatch[0].length)) {
+          bestMatch = match;
+          bestContextItem = contextItem;
         }
       }
+    }
+    
+    const match = bestMatch;
+    
+    if (match && bestContextItem) {
+      // We already found the matching context item
+      const contextItem = bestContextItem;
+      const mentionName = match[1];
+      console.log('=== handleKeyDown ===');
+      console.log('Looking for mention:', JSON.stringify(mentionName));
+      console.log('Found context item:', contextItem);
       
-      const match = bestMatch;
-      
-      if (match && bestContextItem) {
-        // We already found the matching context item
-        const contextItem = bestContextItem;
-        const mentionName = match[1];
-        console.log('=== handleKeyDown ===');
-        console.log('Looking for mention:', JSON.stringify(mentionName));
-        console.log('Found context item:', contextItem);
+      if (contextItem) {
+        e.preventDefault();
+        // Remove the entire @ mention
+        const beforeMention = textBeforeCursor.substring(0, match.index);
+        const afterCursor = input.substring(cursorPos);
+        const newInput = beforeMention + afterCursor;
         
-        if (contextItem) {
-          e.preventDefault();
-          // Remove the entire @ mention
-          const beforeMention = textBeforeCursor.substring(0, match.index);
-          const afterCursor = input.substring(cursorPos);
-          const newInput = beforeMention + afterCursor;
-          
-          setInput(newInput);
-          
-          // Remove the corresponding context chip
-          const newContext = context.filter(c => c.id !== contextItem.id);
-          onContextChange(newContext);
-          
-          // Keep backend in sync
-          if (sessionId) setAgentContext(sessionId, newContext).catch(() => void 0);
-          
-          // Set cursor position after deletion
-          setTimeout(() => {
-            textarea.setSelectionRange(beforeMention.length, beforeMention.length);
-          }, 0);
-        }
+        setInput(newInput);
+        
+        // Remove the corresponding context chip
+        const newContext = context.filter(c => c.id !== contextItem.id);
+        onContextChange(newContext);
+        
+        // Keep backend in sync
+        if (sessionId) setAgentContext(sessionId, newContext).catch(() => void 0);
+        
+        // Set cursor position after deletion
+        setTimeout(() => {
+          textarea.setSelectionRange(beforeMention.length, beforeMention.length);
+        }, 0);
       }
     }
   };
@@ -365,10 +392,10 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
       </div>
 
       {/* Info Banner */}
-      <div className="bg-[#21262d] py-2 flex items-center justify-center">
+      <div className="bg-[#2d333b] py-2 flex items-center justify-center">
         <button
           onClick={() => setShowInfoModal(true)}
-          className="text-xs text-[#8b949e] hover:text-[#e6edf3] transition-colors italic flex items-center gap-1.5"
+          className="text-xs text-[#a8b2d1] hover:text-[#e6edf3] transition-colors italic flex items-center gap-1.5"
           title="Learn about Nour's capabilities"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -389,7 +416,6 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
             ref={inputRef}
             value={input}
             onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
             onKeyDown={handleKeyDown}
             placeholder="Type a message… Use @ to mention items (workspace, database, schema, table, column)."
             className="w-full h-20 resize-none rounded border border-[#30363d] bg-[#21262d] text-[#e6edf3] p-2 focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb] transition-colors placeholder:text-xs placeholder:italic placeholder:text-[#8b949e]"

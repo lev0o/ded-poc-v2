@@ -213,8 +213,8 @@ export default function CatalogExplorer({}: Props) {
             Fabric Explorer
           </h2>
         </div>
-        <div className="bg-[#21262d] text-center py-2">
-          <div className="text-xs text-[#8b949e]">Loading catalog...</div>
+        <div className="bg-[#2d333b] text-center py-2">
+          <div className="text-xs text-[#a8b2d1]">Loading catalog...</div>
         </div>
       </div>
     );
@@ -229,7 +229,7 @@ export default function CatalogExplorer({}: Props) {
             Fabric Explorer
           </h2>
         </div>
-        <div className="bg-[#21262d] text-center py-2">
+        <div className="bg-[#2d333b] text-center py-2">
           <div className="text-xs text-[#f85149]">Error loading catalog: {error.message}</div>
         </div>
       </div>
@@ -245,8 +245,8 @@ export default function CatalogExplorer({}: Props) {
             Fabric Explorer
           </h2>
         </div>
-        <div className="bg-[#21262d] text-center py-2">
-          <div className="text-xs text-[#8b949e]">No catalog data available</div>
+        <div className="bg-[#2d333b] text-center py-2">
+          <div className="text-xs text-[#a8b2d1]">No catalog data available</div>
         </div>
       </div>
     );
@@ -335,8 +335,8 @@ export default function CatalogExplorer({}: Props) {
       </div>
 
       <div className="space-y-2">
-        <div className="bg-[#21262d] text-center py-2">
-          <div className="text-xs text-[#8b949e]">
+        <div className="bg-[#2d333b] text-center py-2">
+          <div className="text-xs text-[#a8b2d1]">
             {catalog.total_workspaces} workspaces • {catalog.total_databases} databases • {catalog.total_tables} tables • {catalog.total_columns} columns
           </div>
         </div>

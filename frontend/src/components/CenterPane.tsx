@@ -103,9 +103,7 @@ function ResultContent({ result }: { result: AgentRunResponse }) {
               CSV
             </button>
           </div>
-          <div className="rounded border border-[#30363d] overflow-auto inline-block">
-            <DataTable columns={table.columns} rows={table.rows} />
-          </div>
+          <DataTable columns={table.columns} rows={table.rows} />
         </section>
       )}
 

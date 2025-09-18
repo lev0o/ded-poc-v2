@@ -9,15 +9,15 @@ interface Props {
 
 export default function DataTable({ columns, rows, height = 380 }: Props) {
   return (
-    <div className="inline-block overflow-auto" style={{ maxHeight: height, minWidth: '300px' }}>
-      <table className="text-sm border-collapse border border-[#30363d] w-full">
-        <thead className="sticky top-0 bg-[#374151] z-10">
-          <tr>
+    <div className="inline-block overflow-auto rounded border border-[#30363d]" style={{ maxHeight: height, minWidth: '300px' }}>
+      <table className="text-sm border-collapse w-full">
+        <thead className="sticky top-0 z-10 -mt-px">
+          <tr className="bg-[#374151]">
             {columns.map((c, index) => (
               <th 
                 key={c} 
-                className={`px-2 py-1.5 text-left font-semibold whitespace-nowrap text-[#f9fafb] border-b border-[#6b7280] ${
-                  index < columns.length - 1 ? 'border-r border-[#6b7280]' : ''
+                className={`px-2 py-1.5 text-left font-semibold whitespace-nowrap text-[#f9fafb] border-b border-[#9ca3af] bg-[#374151] ${
+                  index < columns.length - 1 ? 'border-r border-[#9ca3af]' : ''
                 }`}
               >
                 {c}
