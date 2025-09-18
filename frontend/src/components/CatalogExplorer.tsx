@@ -141,15 +141,15 @@ export default function CatalogExplorer({}: Props) {
 
   if (isLoading) {
     return (
-      <div className="h-full overflow-auto bg-[#0a0d12]">
+          <div className="h-full overflow-auto bg-[#161b22]">
         <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
-            <Building2 size={16} className="text-[#58a6ff]" />
+              <Building2 size={12} className="text-[#58a6ff]" />
             Fabric Explorer
           </h2>
         </div>
-        <div className="p-2">
-          <div className="text-xs text-[#e6edf3]">Loading catalog...</div>
+        <div className="bg-[#21262d] mx-2 rounded text-center py-2">
+          <div className="text-xs text-[#8b949e]">Loading catalog...</div>
         </div>
       </div>
     );
@@ -157,14 +157,14 @@ export default function CatalogExplorer({}: Props) {
 
   if (error) {
     return (
-      <div className="h-full overflow-auto bg-[#0a0d12]">
+          <div className="h-full overflow-auto bg-[#161b22]">
         <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
-            <Building2 size={16} className="text-[#58a6ff]" />
+              <Building2 size={12} className="text-[#58a6ff]" />
             Fabric Explorer
           </h2>
         </div>
-        <div className="p-2">
+        <div className="bg-[#21262d] mx-2 rounded text-center py-2">
           <div className="text-xs text-[#f85149]">Error loading catalog: {error.message}</div>
         </div>
       </div>
@@ -173,25 +173,25 @@ export default function CatalogExplorer({}: Props) {
 
   if (!catalog) {
     return (
-      <div className="h-full overflow-auto bg-[#0a0d12]">
+          <div className="h-full overflow-auto bg-[#161b22]">
         <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
-            <Building2 size={16} className="text-[#58a6ff]" />
+              <Building2 size={12} className="text-[#58a6ff]" />
             Fabric Explorer
           </h2>
         </div>
-        <div className="p-2">
-          <div className="text-xs text-[#e6edf3]">No catalog data available</div>
+        <div className="bg-[#21262d] mx-2 rounded text-center py-2">
+          <div className="text-xs text-[#8b949e]">No catalog data available</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full overflow-auto relative bg-[#0a0d12]">
+        <div className="h-full overflow-auto relative bg-[#161b22]">
       <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
         <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
-          <Building2 size={16} className="text-[#58a6ff]" />
+              <Building2 size={12} className="text-[#58a6ff]" />
           Fabric Explorer
         </h2>
         <div className="relative" ref={dropdownRef}>
@@ -218,11 +218,11 @@ export default function CatalogExplorer({}: Props) {
                }`}
               title={isRefreshing ? "Refreshing..." : "Refresh active workspaces"}
             >
-              {isRefreshing ? (
-                <RefreshCw size={12} className="animate-spin" />
-              ) : (
-                <RefreshCw size={12} />
-              )}
+                  {isRefreshing ? (
+                    <RefreshCw size={10} className="animate-spin" />
+                  ) : (
+                    <RefreshCw size={10} />
+                  )}
             </button>
             
             {/* Dropdown button */}
@@ -236,7 +236,7 @@ export default function CatalogExplorer({}: Props) {
                }`}
               title="More refresh options"
             >
-              <DropdownIcon size={12} />
+                  <DropdownIcon size={10} />
             </button>
           </div>
           
@@ -261,7 +261,7 @@ export default function CatalogExplorer({}: Props) {
                 className="w-full text-left px-3 py-2 text-xs text-[#e6edf3] hover:bg-[#0d1117] transition-colors flex items-center gap-2"
                 title="Refresh all workspaces"
               >
-                <RefreshCw size={12} />
+                    <RefreshCw size={10} />
                 Refresh All
               </button>
             </div>
@@ -270,8 +270,10 @@ export default function CatalogExplorer({}: Props) {
       </div>
 
       <div className="space-y-2">
-        <div className="text-xs opacity-70 text-[#e6edf3] mb-2 px-3 mt-2">
-          {catalog.total_workspaces} workspaces • {catalog.total_databases} databases • {catalog.total_tables} tables • {catalog.total_columns} columns
+        <div className="bg-[#21262d] text-center py-2">
+          <div className="text-xs text-[#8b949e]">
+            {catalog.total_workspaces} workspaces • {catalog.total_databases} databases • {catalog.total_tables} tables • {catalog.total_columns} columns
+          </div>
         </div>
 
         <div className="space-y-0">
@@ -304,7 +306,7 @@ export default function CatalogExplorer({}: Props) {
         <div className="absolute inset-0 bg-[#0d1117]/80 backdrop-blur-sm z-10 flex items-center justify-center">
           <div className="flex flex-col items-center space-y-2">
             <div className="w-6 h-6 border-2 border-[#1f6feb] border-t-transparent rounded-full animate-spin"></div>
-            <div className="text-sm text-[#e6edf3] font-medium">
+            <div className="text-sm text-[#8b949e] font-medium">
               {isRefreshing ? 'Refreshing catalog...' : 'Loading catalog...'}
             </div>
           </div>

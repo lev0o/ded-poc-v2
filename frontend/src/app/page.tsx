@@ -79,7 +79,7 @@ export default function Page() {
       </div>
 
       {/* Desktop Layout */}
-      <div className="hidden lg:grid lg:grid-cols-[320px_1fr_380px] flex-1 overflow-hidden">
+      <div className="hidden lg:grid lg:grid-cols-[350px_1fr_350px] flex-1 overflow-hidden">
         <aside className="bg-[#161b22] h-full overflow-hidden">
           <CatalogExplorer />
         </aside>

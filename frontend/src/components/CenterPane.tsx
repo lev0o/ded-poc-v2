@@ -77,40 +77,33 @@ function ResultContent({ result }: { result: AgentRunResponse }) {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-4">
-      {/* Timestamp header */}
-      <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#30363d]">
-        <h3 className="text-sm font-bold text-[#f0f6fc]">Query Result</h3>
-        <div className="text-xs text-[#8b949e]">
-          {new Date(result.finished_at).toLocaleString()}
-        </div>
-      </div>
-
-      {table?.sql && (
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {table?.sql && (
         <section>
-          <h4 className="text-sm font-bold mb-2 text-[#f0f6fc]">SQL</h4>
+          <h4 className="text-sm font-bold mb-2 pb-1 border-b border-[#30363d] text-[#f0f6fc]">SQL</h4>
           <pre className="rounded bg-[#0d1117] border border-[#30363d] p-3 overflow-auto"><code className="text-[#e6edf3]">{table.sql}</code></pre>
         </section>
       )}
 
       {table && (
         <section>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#30363d]">
             <h4 className="text-sm font-bold text-[#f0f6fc]">Data ({table.rowCount} rows)</h4>
             <button
               onClick={() => downloadTableAsCSV(table)}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-[#e6edf3] transition-colors"
               title="Download as CSV"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7,10 12,15 17,10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7,10 12,15 17,10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
               CSV
             </button>
           </div>
-          <div className="rounded border border-[#30363d] overflow-auto">
+          <div className="rounded border border-[#30363d] overflow-auto inline-block">
             <DataTable columns={table.columns} rows={table.rows} />
           </div>
         </section>
@@ -118,7 +111,7 @@ function ResultContent({ result }: { result: AgentRunResponse }) {
 
       {chart && (
         <section>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#30363d]">
             <h4 className="text-sm font-bold text-[#f0f6fc]">Chart</h4>
             <div className="flex items-center gap-2">
               <button
@@ -126,11 +119,11 @@ function ResultContent({ result }: { result: AgentRunResponse }) {
                 className="flex items-center gap-1 px-2 py-1 text-xs bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-[#e6edf3] transition-colors"
                 title="Download as PNG"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21,15 16,10 5,21"/>
-                </svg>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21,15 16,10 5,21"/>
+                    </svg>
                 PNG
               </button>
               <button
@@ -138,22 +131,28 @@ function ResultContent({ result }: { result: AgentRunResponse }) {
                 className="flex items-center gap-1 px-2 py-1 text-xs bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] rounded text-[#e6edf3] transition-colors"
                 title="Download as SVG"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7,10 12,15 17,10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7,10 12,15 17,10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
                 SVG
               </button>
             </div>
           </div>
-          <div className="rounded border border-[#30363d] overflow-auto bg-[#0d1117]">
-            <div className="p-3">
-              <VegaChart ref={chartRef} spec={sanitizeData(chart)} />
-            </div>
+          <div className="rounded border border-[#30363d] overflow-auto bg-[#0d1117] inline-block">
+            <VegaChart ref={chartRef} spec={sanitizeData(chart)} />
           </div>
         </section>
       )}
+      </div>
+      
+      {/* Fixed timestamp footer */}
+      <div className="flex justify-end px-4 py-1 bg-[#111419]">
+        <div className="text-xs text-[#8b949e]">
+          Generated at {new Date(result.finished_at).toLocaleString()}
+        </div>
+      </div>
     </div>
   );
 }
@@ -201,7 +200,7 @@ export default function CenterPane({ results }: Props) {
 
   return (
     <div className="h-full flex flex-col bg-[#111419]">
-      {/* Tab Bar - Matches other headers */}
+      {/* Tab Bar */}
       <div className="flex bg-[#161b22] overflow-x-auto h-10">
         {resultsWithData.map((result, index) => (
           <button
@@ -209,14 +208,14 @@ export default function CenterPane({ results }: Props) {
             onClick={() => setActiveTab(index)}
             className={`
               flex items-center gap-2 px-3 py-2 text-sm font-medium whitespace-nowrap
-              transition-colors duration-150
+              transition-colors duration-150 h-full
               ${activeTab === index 
                 ? 'bg-[#111419] text-[#f0f6fc]' 
-                : 'bg-[#0d1117] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#161b22]'
+                : 'bg-[#0d1117] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d]'
               }
             `}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14,2 14,8 20,8"/>
               <line x1="16" y1="13" x2="8" y2="13"/>
@@ -238,7 +237,7 @@ export default function CenterPane({ results }: Props) {
             <ResultContent result={result} />
           </div>
         ))}
-          </div>
+      </div>
     </div>
   );
 }

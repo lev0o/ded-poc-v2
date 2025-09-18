@@ -351,18 +351,18 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
       {/* Header */}
       <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
         <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
-          <svg className="w-4 h-4 text-[#58a6ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
+              <svg className="w-3 h-3 text-[#58a6ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
           Nour - Fabric Assistant
           <button
             onClick={() => setShowInfoModal(true)}
-            className="text-[#8b949e] hover:text-[#e6edf3] transition-colors p-1"
+            className="text-[#8b949e] hover:text-[#e6edf3] transition-colors"
             title="Learn about Nour's capabilities"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
           </button>
         </h2>
         <button
@@ -387,7 +387,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
             onKeyPress={handleKeyPress}
             onKeyDown={handleKeyDown}
             placeholder="Type a message… Use @ to mention items (workspace, database, schema, table, column)."
-            className="w-full h-20 resize-none rounded border border-[#30363d] bg-[#21262d] text-[#e6edf3] p-2 focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb] transition-colors"
+            className="w-full h-20 resize-none rounded border border-[#30363d] bg-[#21262d] text-[#e6edf3] p-2 focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb] transition-colors placeholder:text-xs placeholder:italic placeholder:text-[#8b949e]"
           />
           {showMentionDropdown && mentionPosition && (
             <MentionDropdown
