@@ -349,27 +349,32 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
   return (
     <div className="flex h-full flex-col bg-[#161b22]">
       {/* Header */}
-      <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
+      <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
         <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
               <svg className="w-3 h-3 text-[#58a6ff]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
           Nour - Fabric Assistant
-          <button
-            onClick={() => setShowInfoModal(true)}
-            className="text-[#8b949e] hover:text-[#e6edf3] transition-colors"
-            title="Learn about Nour's capabilities"
-          >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-          </button>
         </h2>
         <button
           onClick={onNewChat}
           className="text-xs rounded px-2 py-1 transition-colors font-medium bg-[#0d1117] text-[#e6edf3] hover:bg-[#161b22]"
         >
           New chat
+        </button>
+      </div>
+
+      {/* Info Banner */}
+      <div className="bg-[#21262d] py-2 flex items-center justify-center">
+        <button
+          onClick={() => setShowInfoModal(true)}
+          className="text-xs text-[#8b949e] hover:text-[#e6edf3] transition-colors italic flex items-center gap-1.5"
+          title="Learn about Nour's capabilities"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Click for more info
         </button>
       </div>
 
@@ -455,6 +460,14 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
                   <span>Generate interactive charts and visualizations</span>
                 </div>
                 <div className="flex items-start gap-2">
+                  <span className="text-[#3fb950]">•</span>
+                  <span><strong>Time series forecasting</strong> with Prophet AI</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#3fb950]">•</span>
+                  <span><strong>Predictive analytics</strong> with confidence intervals</span>
+                </div>
+                <div className="flex items-start gap-2">
                   <span className="text-[#58a6ff]">•</span>
                   <span>Answer questions about your data structure</span>
                 </div>
@@ -470,6 +483,7 @@ export default function ChatPanel({ context, onContextChange, onAgentResult, onS
               <div className="mt-4 p-3 bg-[#161b22] rounded border border-[#30363d]">
                 <p className="text-[#58a6ff] font-medium mb-1">💡 Pro Tip:</p>
                 <p className="text-xs">Use @ mentions to reference specific items in your queries!</p>
+                <p className="text-xs mt-1 text-[#3fb950]">Try: "Forecast sales for the next 6 months" or "Predict customer growth trends"</p>
               </div>
             </div>
           </div>

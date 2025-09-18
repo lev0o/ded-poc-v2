@@ -9,6 +9,7 @@ from routers import diagnostics_sqldb
 from routers import introspect
 from routers import agent_graph
 from routers import catalog
+from routers import forecasting
 
 app = FastAPI(title="Fabric Explorer API", version="0.3.0")
 
@@ -31,6 +32,7 @@ app.include_router(diagnostics_sqldb.router)
 app.include_router(introspect.router)
 app.include_router(agent_graph.router)
 app.include_router(catalog.router)
+app.include_router(forecasting.router)
 
 @app.on_event("startup")
 async def _startup():

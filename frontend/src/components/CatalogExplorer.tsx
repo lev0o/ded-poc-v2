@@ -20,7 +20,10 @@ import {
   ChevronDown as DropdownIcon,
   Server,
   HardDrive,
-  Cloud
+  Cloud,
+  Waves,
+  Warehouse,
+  Database as DatabaseIcon2
 } from "lucide-react";
 
 interface Props {
@@ -70,16 +73,62 @@ function getDatabaseIcon(kind: string) {
   const kindLower = kind.toLowerCase();
   
   if (kindLower.includes('sql') && kindLower.includes('endpoint')) {
-    return <Server size={14} className="text-[#3fb950]" />;
+    // All SQL endpoints use Server icon, but with different colors based on type
+    if (kindLower.includes('lakehouse') || kindLower.includes('lake')) {
+      return <Server size={14} className="text-[#58a6ff]" />; // Blue for lakehouse endpoints
+    } else if (kindLower.includes('warehouse') || kindLower.includes('datawarehouse') || kindLower.includes('data warehouse')) {
+      return <Server size={14} className="text-[#f97316]" />; // Orange for warehouse endpoints
+    } else {
+      return <Server size={14} className="text-[#3fb950]" />; // Green for traditional SQL endpoints
+    }
   } else if (kindLower.includes('sql') && kindLower.includes('database')) {
-    return <DatabaseIcon size={14} className="text-[#3fb950]" />;
-  } else if (kindLower.includes('lakehouse')) {
-    return <HardDrive size={14} className="text-[#58a6ff]" />;
+    return <DatabaseIcon2 size={14} className="text-[#3fb950]" />;
+  } else if (kindLower.includes('lakehouse') || kindLower.includes('lake')) {
+    return <Waves size={14} className="text-[#58a6ff]" />;
   } else if (kindLower.includes('warehouse')) {
-    return <Cloud size={14} className="text-[#a855f7]" />;
+    return <Warehouse size={14} className="text-[#f97316]" />;
+  } else if (kindLower.includes('datawarehouse') || kindLower.includes('data warehouse')) {
+    return <Cloud size={14} className="text-[#8b5cf6]" />;
   } else {
-    return <DatabaseIcon size={14} className="text-[#3fb950]" />;
+    return <DatabaseIcon size={14} className="text-[#6b7280]" />;
   }
+}
+
+// Helper function to group databases and their SQL endpoints
+function groupDatabasesAndEndpoints(databases: Database[]) {
+  const grouped: { [key: string]: { database: Database; endpoints: Database[] } } = {};
+  
+  databases.forEach(db => {
+    const kindLower = db.kind.toLowerCase();
+    
+    if (kindLower.includes('sql') && kindLower.includes('endpoint')) {
+      // This is a SQL endpoint - find its parent database
+      const baseName = db.name?.replace(/\s+SQL\s+Endpoint$/i, '') || db.name;
+      const parentKey = baseName || db.id;
+      
+      if (!grouped[parentKey]) {
+        // Create a placeholder database entry
+        grouped[parentKey] = {
+          database: {
+            ...db,
+            name: baseName || `Database ${db.id.substring(0, 8)}`,
+            kind: kindLower.includes('lakehouse') ? 'Lakehouse' : 
+                  kindLower.includes('warehouse') ? 'Warehouse' : 'SQL Database'
+          },
+          endpoints: []
+        };
+      }
+      grouped[parentKey].endpoints.push(db);
+    } else {
+      // This is a regular database
+      const key = db.name || db.id;
+      if (!grouped[key]) {
+        grouped[key] = { database: db, endpoints: [] };
+      }
+    }
+  });
+  
+  return Object.values(grouped);
 }
 
 type Expanded = {
@@ -88,6 +137,10 @@ type Expanded = {
 
 type ExpandedDb = {
   [key: string]: boolean; // `${wsId}:${dbId}`
+};
+
+type ExpandedEndpoint = {
+  [key: string]: boolean; // `${wsId}:${endpointId}`
 };
 
 type ExpandedSchema = {
@@ -101,6 +154,7 @@ type ExpandedTable = {
 export default function CatalogExplorer({}: Props) {
   const [expanded, setExpanded] = useState<Expanded>({});
   const [expandedDb, setExpandedDb] = useState<ExpandedDb>({});
+  const [expandedEndpoint, setExpandedEndpoint] = useState<ExpandedEndpoint>({});
   const [expandedSchema, setExpandedSchema] = useState<ExpandedSchema>({});
   const [expandedTable, setExpandedTable] = useState<ExpandedTable>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -135,6 +189,10 @@ export default function CatalogExplorer({}: Props) {
     const k = `${wsId}:${dbId}`;
     return { ...s, [k]: !s[k] };
   });
+  const toggleEndpoint = (wsId: string, endpointId: string) => setExpandedEndpoint(s => {
+    const k = `${wsId}:${endpointId}`;
+    return { ...s, [k]: !s[k] };
+  });
   const toggleSchema = (wsId: string, dbId: string, schema: string) =>
     setExpandedSchema(s => {
       const k = `${wsId}:${dbId}:${schema}`;
@@ -148,8 +206,8 @@ export default function CatalogExplorer({}: Props) {
 
   if (isLoading) {
     return (
-          <div className="h-full overflow-auto bg-[#161b22]">
-        <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
+          <div className="h-full overflow-auto bg-[#161b22] no-scrollbar-space">
+        <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
               <Building2 size={12} className="text-[#58a6ff]" />
             Fabric Explorer
@@ -164,8 +222,8 @@ export default function CatalogExplorer({}: Props) {
 
   if (error) {
     return (
-          <div className="h-full overflow-auto bg-[#161b22]">
-        <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
+          <div className="h-full overflow-auto bg-[#161b22] no-scrollbar-space">
+        <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
               <Building2 size={12} className="text-[#58a6ff]" />
             Fabric Explorer
@@ -180,8 +238,8 @@ export default function CatalogExplorer({}: Props) {
 
   if (!catalog) {
     return (
-          <div className="h-full overflow-auto bg-[#161b22]">
-        <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
+          <div className="h-full overflow-auto bg-[#161b22] no-scrollbar-space">
+        <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
               <Building2 size={12} className="text-[#58a6ff]" />
             Fabric Explorer
@@ -195,8 +253,8 @@ export default function CatalogExplorer({}: Props) {
   }
 
   return (
-        <div className="h-full overflow-auto relative bg-[#161b22]">
-      <div className="flex items-center justify-between px-2 py-2 bg-[#161b22] h-10">
+        <div className="h-full overflow-auto relative bg-[#161b22] no-scrollbar-space">
+      <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
         <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
               <Building2 size={12} className="text-[#58a6ff]" />
           Fabric Explorer
@@ -296,7 +354,9 @@ export default function CatalogExplorer({}: Props) {
                   wsId={ws.id} 
                   databases={ws.databases}
                   expandedDb={expandedDb} 
-                  toggleDb={toggleDb} 
+                  toggleDb={toggleDb}
+                  expandedEndpoint={expandedEndpoint}
+                  toggleEndpoint={toggleEndpoint}
                   expandedSchema={expandedSchema} 
                   toggleSchema={toggleSchema}
                   expandedTable={expandedTable}
@@ -354,45 +414,90 @@ function WorkspaceNode({
 }
 
 function DatabaseList({
-  wsId, databases, expandedDb, toggleDb, expandedSchema, toggleSchema, expandedTable, toggleTable
+  wsId, databases, expandedDb, toggleDb, expandedEndpoint, toggleEndpoint, expandedSchema, toggleSchema, expandedTable, toggleTable
 }: {
   wsId: string;
   databases: Database[];
   expandedDb: { [k: string]: boolean };
   toggleDb: (wsId: string, dbId: string) => void;
+  expandedEndpoint: { [k: string]: boolean };
+  toggleEndpoint: (wsId: string, endpointId: string) => void;
   expandedSchema: { [k: string]: boolean };
   toggleSchema: (wsId: string, dbId: string, schema: string) => void;
   expandedTable: { [k: string]: boolean };
   toggleTable: (wsId: string, dbId: string, schema: string, table: string) => void;
 }) {
+  const grouped = groupDatabasesAndEndpoints(databases);
+  
   return (
     <div>
-      {databases.map((db: Database) => {
-        const key = `${wsId}:${db.id}`;
+      {grouped.map(({ database, endpoints }) => {
+        const key = `${wsId}:${database.id}`;
         const open = !!expandedDb[key];
         return (
-          <div key={db.id}>
+          <div key={database.id}>
             <div className="flex items-center hover:bg-[#161b22]">
               <button 
-                onClick={() => toggleDb(wsId, db.id)} 
+                onClick={() => toggleDb(wsId, database.id)} 
                 className="flex items-center gap-1.5 hover:underline text-[#e6edf3] font-medium text-sm px-3 py-1 w-full text-left"
-                title={`${db.name} (${db.kind})`}
+                title={`${database.name} (${database.kind})`}
               >
                 {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                {getDatabaseIcon(db.kind)}
-                <span className="truncate">{db.name}</span>
+                {getDatabaseIcon(database.kind)}
+                <span className="truncate">{database.name}</span>
               </button>
             </div>
             {open && (
-              <SchemaList 
-                wsId={wsId} 
-                dbId={db.id} 
-                schemas={db.schemas}
-                expandedSchema={expandedSchema} 
-                toggleSchema={toggleSchema}
-                expandedTable={expandedTable}
-                toggleTable={toggleTable}
-              />
+              <div className="ml-4">
+                {/* Show SQL endpoints if they exist */}
+                {endpoints.length > 0 && (
+                  <div className="space-y-1">
+                    {endpoints.map((endpoint) => {
+                      const endpointKey = `${wsId}:${endpoint.id}`;
+                      const endpointOpen = !!expandedEndpoint[endpointKey];
+                      return (
+                        <div key={endpoint.id}>
+                          <div className="flex items-center hover:bg-[#161b22]">
+                            <button 
+                              onClick={() => toggleEndpoint(wsId, endpoint.id)} 
+                              className="flex items-center gap-1.5 hover:underline text-[#e6edf3] text-sm px-3 py-1 w-full text-left"
+                              title={`${endpoint.name} (${endpoint.kind})`}
+                            >
+                              {endpointOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                              {getDatabaseIcon(endpoint.kind)}
+                              <span className="truncate">{endpoint.name}</span>
+                            </button>
+                          </div>
+                          {endpointOpen && (
+                            <SchemaList 
+                              wsId={wsId} 
+                              dbId={endpoint.id} 
+                              schemas={endpoint.schemas}
+                              expandedSchema={expandedSchema} 
+                              toggleSchema={toggleSchema}
+                              expandedTable={expandedTable}
+                              toggleTable={toggleTable}
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                {/* Show schemas directly if no endpoints */}
+                {endpoints.length === 0 && (
+                  <SchemaList 
+                    wsId={wsId} 
+                    dbId={database.id} 
+                    schemas={database.schemas}
+                    expandedSchema={expandedSchema} 
+                    toggleSchema={toggleSchema}
+                    expandedTable={expandedTable}
+                    toggleTable={toggleTable}
+                  />
+                )}
+              </div>
             )}
           </div>
         );

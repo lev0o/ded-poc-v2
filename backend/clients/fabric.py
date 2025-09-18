@@ -56,7 +56,6 @@ async def check_workspace_availability(workspace_id: str) -> str:
                             # For Fabric endpoints, test by trying to access workspace items
                             try:
                                 items_data = await _get_json(c, f"workspaces/{workspace_id}/items", token=token)
-                                print(f"    Items API response: {items_data}")
                                 
                                 # If we can get items, try to test actual data access by attempting a query
                                 # This should fail if capacity is paused
@@ -69,32 +68,25 @@ async def check_workspace_availability(workspace_id: str) -> str:
                                         endpoint_id = first_endpoint["id"]
                                         conn_test = await _get_json(c, f"workspaces/{workspace_id}/sqlEndpoints/{endpoint_id}/connectionString", token=token)
                                         if conn_test and conn_test.get("connectionString"):
-                                            print(f"    SQL endpoint connection string available, testing actual SQL execution...")
                                             # Try to actually execute a SQL query - this should fail if capacity is paused
                                             try:
                                                 from sql.odbc import exec_query
                                                 conn_str = conn_test["connectionString"]
-                                                print(f"    Connection string: {conn_str}")
                                                 
                                                 # For Fabric datawarehouse endpoints, the connection string is just the hostname
                                                 if 'datawarehouse.fabric.microsoft.com' in conn_str:
                                                     # Extract server from the connection string (it's just the hostname)
                                                     server = conn_str.strip()
                                                     database = "master"  # Use master database for Fabric endpoints
-                                                    print(f"    Attempting SQL query on Fabric endpoint {server}/{database}...")
                                                     
                                                     try:
                                                         cols, rows = await exec_query(server, database, 1433, "SELECT 1")
-                                                        print(f"    SQL query successful - capacity is active")
                                                         return 'active'
                                                     except Exception as sql_exec_e:
-                                                        print(f"    SQL execution failed: {sql_exec_e}")
                                                         error_msg = str(sql_exec_e).lower()
                                                         if any(keyword in error_msg for keyword in ["capacity", "paused", "inactive", "suspended", "unavailable", "timeout", "connection", "login", "authentication"]):
-                                                            print(f"    SQL execution failure indicates paused capacity")
                                                             return 'inactive'
                                                         else:
-                                                            print(f"    SQL execution failure due to other reason, assuming active")
                                                             return 'active'
                                                 else:
                                                     # Traditional SQL Server endpoint - try to parse connection string
@@ -102,30 +94,21 @@ async def check_workspace_availability(workspace_id: str) -> str:
                                                     database = conn_str.split('Database=')[1].split(';')[0] if 'Database=' in conn_str else None
                                                     
                                                     if server and database:
-                                                        print(f"    Attempting SQL query on traditional endpoint {server}/{database}...")
                                                         cols, rows = await exec_query(server, database, 1433, "SELECT 1")
-                                                        print(f"    SQL query successful - capacity is active")
                                                         return 'active'
                                                     else:
-                                                        print(f"    Could not parse traditional connection string for SQL test")
                                                         return 'active'  # Assume active if we can't test
                                             except Exception as sql_exec_e:
-                                                print(f"    SQL execution failed: {sql_exec_e}")
                                                 error_msg = str(sql_exec_e).lower()
                                                 if any(keyword in error_msg for keyword in ["capacity", "paused", "inactive", "suspended", "unavailable", "timeout", "connection"]):
-                                                    print(f"    SQL execution failure indicates paused capacity")
                                                     return 'inactive'
                                                 else:
-                                                    print(f"    SQL execution failure due to other reason, assuming active")
                                                     return 'active'
                                         else:
-                                            print(f"    SQL endpoint connection string unavailable - capacity may be paused")
                                             return 'inactive'
                                     else:
-                                        print(f"    No SQL endpoints found - capacity may be paused")
                                         return 'inactive'
                                 except Exception as sql_e:
-                                    print(f"    SQL endpoint test failed: {sql_e}")
                                     # Check if this is a capacity-related error
                                     error_msg = str(sql_e).lower()
                                     if any(keyword in error_msg for keyword in ["capacity", "paused", "inactive", "suspended", "unavailable"]):
@@ -135,7 +118,6 @@ async def check_workspace_availability(workspace_id: str) -> str:
                                 
                                 return 'active' if items_data is not None else 'inactive'
                             except Exception as e:
-                                print(f"    Items API failed: {e}")
                                 return 'inactive'
                         else:
                             # Traditional SQL Server endpoint - try to parse connection string
@@ -195,10 +177,8 @@ async def list_workspaces() -> List[Dict[str, Any]]:
                 
                 # Check workspace availability
                 workspace['state'] = await check_workspace_availability(workspace['id'])
-                print(f"Workspace {workspace['displayName']} ({workspace['id']}): state = {workspace['state']}")
                 
             except Exception as e:
-                print(f"Could not get details for workspace {workspace['id']}: {e}")
                 # If we can't get details, check availability directly
                 workspace['state'] = await check_workspace_availability(workspace['id'])
             

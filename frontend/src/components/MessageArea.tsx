@@ -19,7 +19,7 @@ export default function MessageArea({ turns, className = "" }: Props) {
 
   return (
     <div className={`flex-1 overflow-hidden ${className}`}>
-      <div className="h-full overflow-y-auto">
+      <div className="h-full overflow-y-auto no-scrollbar-space">
         <div className="space-y-0">
                   {turns.map((t, i) => (
                     <div key={i} className={`w-full px-3 py-2 shadow-sm ${t.role === "user" ? "bg-[#21262d]" : "bg-[#0d1117] ${i < turns.length - 1 ? 'border-b border-[#21262d]' : ''}"}`}>

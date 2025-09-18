@@ -337,7 +337,10 @@ def _system_prompt(base_context: List[ContextItem]) -> str:
         "- NEVER format data as tables or show sample data in your response - use sql_select_tool instead\n"
         "- NEVER show SQL code in your response unless user explicitly asks to see the SQL\n"
         "- When user asks for data, use sql_select_tool to execute queries and return structured data\n"
-        "- Keep your text responses focused on explanations, guidance, and next steps - not data display\n\n"
+        "- Keep your text responses focused on explanations, guidance, and next steps - not data display\n"
+        "- For forecasting requests: first check if data is time series with is_time_series_data(), then use forecast_tool() to generate predictions\n"
+        "- When forecasting, automatically regenerate charts to show historical data + forecast + confidence intervals\n"
+        "- Always use actual database names from the catalog - never assume or invent database names like 'AdventureWorksLT'\n\n"
         f"{_generic_context_block(base_context)}"
     )
 
@@ -754,6 +757,219 @@ async def list_columns_tool(database: str, schema: str, table: str) -> str:
     except Exception as e:
         return _as_json_str({"error": f"{type(e).__name__}: {e}"})
 
+# ---------------------------
+# Forecasting Tools
+# ---------------------------
+@tool
+async def is_time_series_data(data: TableData) -> str:
+    """
+    Check if the provided data is suitable for time series forecasting.
+    Returns JSON with 'is_time_series' boolean and 'reason' string.
+    """
+    try:
+        cols = data.get("columns", [])
+        rows = data.get("rows", [])
+        
+        if not cols or not rows:
+            return _as_json_str({"is_time_series": False, "reason": "No data provided"})
+        
+        # Check for date/time columns
+        date_columns = []
+        for i, col in enumerate(cols):
+            col_lower = col.lower()
+            if any(keyword in col_lower for keyword in ["date", "time", "timestamp", "year", "month", "day"]):
+                date_columns.append((i, col))
+        
+        if not date_columns:
+            return _as_json_str({"is_time_series": False, "reason": "No date/time columns found"})
+        
+        # Check for numeric columns
+        numeric_columns = []
+        for i, col in enumerate(cols):
+            if i not in [dc[0] for dc in date_columns]:  # Skip date columns
+                # Check if column contains numeric data
+                try:
+                    for row in rows[:5]:  # Check first 5 rows
+                        if row[i] is not None:
+                            float(str(row[i]))
+                    numeric_columns.append((i, col))
+                except (ValueError, TypeError):
+                    continue
+        
+        if not numeric_columns:
+            return _as_json_str({"is_time_series": False, "reason": "No numeric columns found for forecasting"})
+        
+        # Check if we have enough data points
+        if len(rows) < 10:
+            return _as_json_str({"is_time_series": False, "reason": "Insufficient data points (need at least 10)"})
+        
+        return _as_json_str({
+            "is_time_series": True, 
+            "reason": "Data appears suitable for time series forecasting",
+            "date_columns": [col for _, col in date_columns],
+            "numeric_columns": [col for _, col in numeric_columns],
+            "data_points": len(rows)
+        })
+        
+    except Exception as e:
+        return _as_json_str({"is_time_series": False, "reason": f"Error analyzing data: {e}"})
+
+@tool
+async def forecast_tool(data: TableData, periods: int = 30) -> str:
+    """
+    Generate time series forecast using Prophet.
+    Requires data with date and numeric columns.
+    """
+    try:
+        cols = data.get("columns", [])
+        rows = data.get("rows", [])
+        
+        if not cols or not rows:
+            return _as_json_str({"error": "No data provided"})
+        
+        # Find date and numeric columns
+        date_col_idx = None
+        numeric_col_idx = None
+        
+        for i, col in enumerate(cols):
+            col_lower = col.lower()
+            if any(keyword in col_lower for keyword in ["date", "time", "timestamp", "year", "month", "day"]):
+                date_col_idx = i
+            elif date_col_idx is not None and numeric_col_idx is None:  # First numeric column after date
+                try:
+                    float(str(rows[0][i]))
+                    numeric_col_idx = i
+                    break
+                except (ValueError, TypeError):
+                    continue
+        
+        if date_col_idx is None:
+            return _as_json_str({"error": "No date column found"})
+        
+        if numeric_col_idx is None:
+            return _as_json_str({"error": "No numeric column found"})
+        
+        # Prepare data for Prophet
+        prophet_data = []
+        for row in rows:
+            try:
+                date_val = str(row[date_col_idx])
+                numeric_val = float(row[numeric_col_idx])
+                
+                # Convert date to YYYY-MM-DD format
+                if len(date_val) == 4:  # Year only
+                    date_val = f"{date_val}-01-01"
+                elif len(date_val) == 7:  # YYYY-MM
+                    date_val = f"{date_val}-01"
+                
+                prophet_data.append({
+                    "ds": date_val,
+                    "y": numeric_val
+                })
+            except (ValueError, TypeError):
+                continue
+        
+        if len(prophet_data) < 10:
+            return _as_json_str({"error": "Insufficient valid data points for forecasting"})
+        
+        # Call forecasting endpoint
+        async with httpx.AsyncClient(base_url=str(settings.backend_base), timeout=60) as c:
+            response = await c.post("/forecasting/forecast", json={
+                "data": prophet_data,
+                "periods": periods,
+                "freq": "D"
+            })
+            
+            if response.status_code != 200:
+                return _as_json_str({"error": f"Forecasting service error: {response.status_code}"})
+            
+            result = response.json()
+            return _as_json_str(result)
+            
+    except Exception as e:
+        return _as_json_str({"error": f"Forecasting error: {e}"})
+
+@tool
+def make_forecast_chart_spec(forecast_data: dict, historical_data: dict) -> str:
+    """
+    Create a Vega-Lite chart showing historical data + forecast + confidence intervals.
+    """
+    try:
+        # Combine historical and forecast data
+        historical_points = forecast_data.get("historical_data", [])
+        forecast_points = forecast_data.get("forecast_data", [])
+        
+        if not historical_points or not forecast_points:
+            return _as_json_str({"error": "Insufficient forecast data for chart"})
+        
+        # Prepare data for chart
+        chart_data = []
+        
+        # Add historical data
+        for point in historical_points:
+            chart_data.append({
+                "date": point["ds"],
+                "value": point["y"],
+                "type": "Historical"
+            })
+        
+        # Add forecast data
+        for point in forecast_points:
+            chart_data.append({
+                "date": point["ds"],
+                "value": point["yhat"],
+                "type": "Forecast",
+                "lower_bound": point["yhat_lower"],
+                "upper_bound": point["yhat_upper"]
+            })
+        
+        # Create layered chart spec
+        spec = {
+            "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+            "width": 600,
+            "height": 400,
+            "data": {"values": chart_data},
+            "layer": [
+                {
+                    "mark": {"type": "line", "stroke": "#1f77b4", "strokeWidth": 2},
+                    "encoding": {
+                        "x": {"field": "date", "type": "temporal", "title": "Date"},
+                        "y": {"field": "value", "type": "quantitative", "title": "Value"},
+                        "color": {"value": "#1f77b4"}
+                    },
+                    "transform": [{"filter": "datum.type == 'Historical'"}]
+                },
+                {
+                    "mark": {"type": "line", "stroke": "#ff7f0e", "strokeWidth": 2, "strokeDash": [5, 5]},
+                    "encoding": {
+                        "x": {"field": "date", "type": "temporal"},
+                        "y": {"field": "value", "type": "quantitative"},
+                        "color": {"value": "#ff7f0e"}
+                    },
+                    "transform": [{"filter": "datum.type == 'Forecast'"}]
+                },
+                {
+                    "mark": {"type": "area", "opacity": 0.3, "color": "#ff7f0e"},
+                    "encoding": {
+                        "x": {"field": "date", "type": "temporal"},
+                        "y": {"field": "lower_bound", "type": "quantitative"},
+                        "y2": {"field": "upper_bound", "type": "quantitative"},
+                        "color": {"value": "#ff7f0e"}
+                    },
+                    "transform": [{"filter": "datum.type == 'Forecast'"}]
+                }
+            ],
+            "legend": {
+                "orient": "top-left",
+                "title": "Data Type"
+            }
+        }
+        
+        return _as_json_str(spec)
+        
+    except Exception as e:
+        return _as_json_str({"error": f"Chart creation error: {e}"})
+
 # You can register more tools (sample_rows, groupby_count, auto_chart, etc.) here and include them below.
 
 
@@ -829,6 +1045,7 @@ async def run_agent(req: AgentRunRequest) -> AgentRunResponse:
         list_workspaces_tool, list_sqldb_tool, list_items_tool,
         list_schemata_tool, list_tables_tool, list_columns_tool,
         sql_select_tool, make_chart_spec,
+        is_time_series_data, forecast_tool, make_forecast_chart_spec,
     ]
 
     # Build graph (no prompt arg; we pass SystemMessage in input instead)
