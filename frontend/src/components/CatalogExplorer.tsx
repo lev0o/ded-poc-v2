@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 
 interface Props {
-  // No longer needed since we removed @ add buttons
+  onRefreshStateChange?: (isRefreshing: boolean) => void;
 }
 
 // Helper function to get workspace status icon and styling
@@ -180,7 +180,7 @@ type ExpandedTable = {
   [key: string]: boolean; // `${wsId}:${dbId}:${schema}:${table}`
 };
 
-export default function CatalogExplorer({}: Props) {
+export default function CatalogExplorer({ onRefreshStateChange }: Props) {
   const [expanded, setExpanded] = useState<Expanded>({});
   const [expandedDb, setExpandedDb] = useState<ExpandedDb>({});
   const [expandedEndpoint, setExpandedEndpoint] = useState<ExpandedEndpoint>({});
@@ -196,6 +196,13 @@ export default function CatalogExplorer({}: Props) {
     queryFn: getCatalog,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Notify parent component when refresh state changes
+  useEffect(() => {
+    if (onRefreshStateChange) {
+      onRefreshStateChange(isRefreshing);
+    }
+  }, [isRefreshing, onRefreshStateChange]);
 
   // Auto-refresh on first load if catalog is empty
   useEffect(() => {

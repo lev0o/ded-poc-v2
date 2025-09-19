@@ -29,6 +29,7 @@ export default function Page() {
   const [context, setContext] = useState<ContextItem[]>([]);
   const [results, setResults] = useState<AgentRunResponse[]>([]);
   const [activePane, setActivePane] = useState<'explorer' | 'chat' | 'center'>('center');
+  const [isCatalogRefreshing, setIsCatalogRefreshing] = useState(false);
 
   const addContext = (item: ContextItem) => {
     setContext(prev => {
@@ -50,7 +51,7 @@ export default function Page() {
       <div className="hidden lg:block">
         <ResizableLayout
           header={<Header />}
-          leftPanel={<CatalogExplorer />}
+          leftPanel={<CatalogExplorer onRefreshStateChange={setIsCatalogRefreshing} />}
           centerPanel={
             <div className="h-full overflow-y-auto">
               <CenterPane results={results} />
@@ -62,6 +63,7 @@ export default function Page() {
               onContextChange={setContext}
               onAgentResult={handleAgentResult}
               onShowResults={() => setActivePane('center')}
+              isCatalogRefreshing={isCatalogRefreshing}
             />
           }
           defaultLeftWidth={350}
@@ -114,7 +116,7 @@ export default function Page() {
         <div className="flex-1 overflow-hidden">
           {activePane === 'explorer' && (
             <div className="h-full bg-[#161b22] overflow-hidden">
-              <CatalogExplorer />
+              <CatalogExplorer onRefreshStateChange={setIsCatalogRefreshing} />
             </div>
           )}
           {activePane === 'center' && (
@@ -131,6 +133,7 @@ export default function Page() {
                 onContextChange={setContext}
                 onAgentResult={handleAgentResult}
                 onShowResults={() => setActivePane('center')}
+                isCatalogRefreshing={isCatalogRefreshing}
               />
             </div>
           )}

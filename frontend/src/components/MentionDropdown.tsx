@@ -23,6 +23,7 @@ interface Props {
   onSelect: (item: ContextItem) => void;
   onClose: () => void;
   position: { top: number; left: number };
+  selectedIndex: number;
 }
 
 // Helper function to get workspace status icon
@@ -90,8 +91,7 @@ function getDisplayName(item: ContextItem, catalog: any): string {
   return item.id;
 }
 
-export default function MentionDropdown({ query, onSelect, onClose, position }: Props) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+export default function MentionDropdown({ query, onSelect, onClose, position, selectedIndex }: Props) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: catalog } = useQuery({
@@ -165,34 +165,11 @@ export default function MentionDropdown({ query, onSelect, onClose, position }: 
     return items; // Show all items
   }, [catalog, query]);
 
-  // Handle keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedIndex(prev => Math.min(prev + 1, filteredItems.length - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex(prev => Math.max(prev - 1, 0));
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (filteredItems[selectedIndex]) {
-          onSelect(filteredItems[selectedIndex]);
-        }
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-    };
+  // Keyboard navigation is now handled by the parent ChatPanel
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [filteredItems, selectedIndex, onSelect, onClose]);
+  // Selected index is now managed by parent component
 
-  // Reset selected index when query changes
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
+  // Don't auto-focus the dropdown - let the textarea keep focus for typing
 
   // Auto-scroll to keep selected item visible
   useEffect(() => {

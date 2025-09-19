@@ -208,6 +208,31 @@ def _best_match(name: str, candidates: List[str], cutoff: float = 0.8) -> Option
 
 
 # ---------------------------
+# FAKE RLS DEMONSTRATION
+# ---------------------------
+def _fake_rls_check(sql: str, workspace_name: str, database_name: str) -> str:
+    """
+    Hard-coded fake RLS demonstration that blocks access to SalesLT.Address table only.
+    This simulates how Row-Level Security would work in a real system.
+    """
+    sql_lower = sql.lower().strip()
+    
+    # DEMO POLICY: Block queries that access SalesLT.Address table specifically
+    # Check for exact table references: FROM SalesLT.Address, JOIN SalesLT.Address, etc.
+    if any(pattern in sql_lower for pattern in [
+        'from saleslt.address',
+        'join saleslt.address', 
+        'update saleslt.address',
+        'delete from saleslt.address',
+        'insert into saleslt.address'
+    ]):
+        return "🚫 RLS VIOLATION: Access denied to SalesLT.Address data. Your role 'Analyst' does not have permission to view address information. Contact your administrator to request access to address tables."
+    
+    # If no RLS violations found, return None (allow the query)
+    return None
+
+
+# ---------------------------
 # Simple in-memory session store
 # ---------------------------
 # Keep it in-memory for now. Swap with Redis/DB later if needed.
@@ -224,7 +249,7 @@ class ChatTurn(BaseModel):
 # Per-session stores
 SESSION_MESSAGES: Dict[SessionId, List[ChatTurn]] = {}
 SESSION_CONTEXT: Dict[SessionId, List[ContextItem]] = {}
-MAX_TURNS_PER_SESSION = 30  # cap history to keep context snappy
+MAX_TURNS_PER_SESSION = 100  # increased memory for better conversation continuity
 
 # ---------------------------
 # Request / Response models
@@ -245,7 +270,7 @@ class AgentRunRequest(BaseModel):
     schema: Optional[str] = None
     table: Optional[str] = None
 
-    max_steps: int = 8
+    max_steps: int = 15
 
 class NewSessionResponse(BaseModel):
     session_id: str
@@ -317,6 +342,11 @@ def _system_prompt(base_context: List[ContextItem]) -> str:
         "You are Nour, a Fabric Assistant.\n"
         "You have access to a comprehensive catalog of all Fabric workspaces, databases, schemas, tables, and columns. "
         "Use the catalog_tool to understand the full structure, then use specific tools to explore and query data.\n\n"
+        "IMPORTANT: You have access to the full conversation history. Use it to understand context and avoid asking for information already provided.\n"
+        "If the user has mentioned specific schemas, tables, or databases in previous messages, use that context instead of asking again.\n"
+        "CRITICAL: If the conversation history shows the user has already worked with DED_Test.Payments table, do NOT ask for workspace/database confirmation - proceed directly with the requested operation.\n"
+        "CRITICAL: If context items are provided (like Table: DED_Test.Payments or Schema: SalesLT), use them directly without asking for confirmation.\n"
+        "CRITICAL: When context items are provided, FIRST call catalog_tool() to understand the structure, THEN proceed with the requested operation using the context.\n\n"
         "Core tasks:\n"
         "- Get full structure: catalog_tool() (shows all workspaces, databases, schemas, tables, and columns)\n"
         "- Get fresh data: catalog_tool(fresh_data=True) (refreshes cache first, then returns cached data)\n"
@@ -324,7 +354,10 @@ def _system_prompt(base_context: List[ContextItem]) -> str:
         "- Query data (read-only): sql_select_tool (single SELECT or CTE+SELECT)\n"
         "- Visualize: make_chart_spec using the last table output\n\n"
         "Rules:\n"
-        "- Always start by calling catalog_tool() to understand the full structure (uses cached catalog tables)\n"
+        "- ALWAYS start by calling catalog_tool() to understand the full structure\n"
+        "- If context items are provided (Table: DED_Test.Payments, Schema: SalesLT, etc.), use catalog_tool() first, then use the context to proceed with the requested operation\n"
+        "- If the user has already mentioned specific schemas/tables in the conversation history, use catalog_tool() first, then use that context\n"
+        "- NEVER ask for database/workspace confirmation if context items are provided - use the catalog to find the correct workspace/database\n"
         "- Use catalog_tool(fresh_data=True) if user explicitly asks for fresh/live data (refreshes cache first)\n"
         "- Keep SQL read-only; one statement; no comments\n"
         "- Prefer names over IDs when possible\n"
@@ -340,7 +373,11 @@ def _system_prompt(base_context: List[ContextItem]) -> str:
         "- Keep your text responses focused on explanations, guidance, and next steps - not data display\n"
         "- For forecasting requests: first check if data is time series with is_time_series_data(), then use forecast_tool() to generate predictions\n"
         "- When forecasting, automatically regenerate charts to show historical data + forecast + confidence intervals\n"
-        "- Always use actual database names from the catalog - never assume or invent database names like 'AdventureWorksLT'\n\n"
+        "- Always use actual database names from the catalog - never assume or invent database names like 'AdventureWorksLT'\n"
+        "- CONTEXT AWARENESS: If the user has previously mentioned specific schemas (like DED_Test), tables (like Payments), or databases, use that context from the conversation history\n"
+        "- Do not ask for workspace/database confirmation if the user has already specified it in previous messages\n"
+        "- CONTEXT ITEMS: If context items are provided (Table: DED_Test.Payments, Schema: SalesLT, etc.), use them immediately without asking for confirmation\n"
+        "- When context items are available, proceed directly with the requested operation using the provided context\n\n"
         f"{_generic_context_block(base_context)}"
     )
 
@@ -589,6 +626,11 @@ async def sql_select_tool(workspace_id: str, database_id: str, sql: str) -> str:
             return _as_json_str({"error": "Only a single read-only SELECT (or CTE + SELECT) is allowed."})
         if any(b in low for b in banned) or "--" in s or "/*" in s or "*/" in s:
             return _as_json_str({"error": "Mutating SQL or comments are not allowed."})
+
+        # FAKE RLS DEMONSTRATION - Hard-coded security policies
+        rls_result = _fake_rls_check(sql, ws_name, db_name)
+        if rls_result:
+            return _as_json_str({"error": rls_result})
 
         async with open_session() as session:
             ep = await session.get(SqlEndpoint, db_id)
@@ -1013,6 +1055,7 @@ async def run_agent(req: AgentRunRequest) -> AgentRunResponse:
         req.context if req.context is not None
         else (SESSION_CONTEXT.get(sid, []).copy() if sid else [])
     )
+    
 
     # Back-compat: if legacy hints provided, append them as generic context items
     legacy_ctx = _fallback_context_from_legacy(req.workspace_id, req.database_id, req.schema, req.table)
@@ -1037,6 +1080,7 @@ async def run_agent(req: AgentRunRequest) -> AgentRunResponse:
 
     # Compose full message list for this invocation
     input_messages: List[BaseMessage] = [SystemMessage(system), *prior_msgs_lc, *new_msgs_lc]
+    
 
     # LLM & tools
     llm = _build_llm()
@@ -1054,7 +1098,7 @@ async def run_agent(req: AgentRunRequest) -> AgentRunResponse:
     # Invoke asynchronously for async tools with recursion limit to prevent infinite loops
     result = await graph.ainvoke(
         {"messages": input_messages},
-        config={"recursion_limit": req.max_steps or 8}
+        config={"recursion_limit": req.max_steps or 15}
     )
 
     # The graph returns a dict with "messages"
@@ -1133,6 +1177,8 @@ async def run_agent(req: AgentRunRequest) -> AgentRunResponse:
         final_ai_text = next((m.content for m in reversed(out_messages_obj) if isinstance(m, AIMessage)), None)
         if final_ai_text:
             SESSION_MESSAGES[sid].append(ChatTurn(role="assistant", content=final_ai_text))
+        
+        
         # Cap
         if len(SESSION_MESSAGES[sid]) > 2*MAX_TURNS_PER_SESSION:
             SESSION_MESSAGES[sid] = SESSION_MESSAGES[sid][-2*MAX_TURNS_PER_SESSION:]
