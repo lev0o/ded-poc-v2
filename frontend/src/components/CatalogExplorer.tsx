@@ -188,6 +188,7 @@ export default function CatalogExplorer({}: Props) {
   const [expandedTable, setExpandedTable] = useState<ExpandedTable>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [hasAutoRefreshed, setHasAutoRefreshed] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: catalog, isLoading, error, refetch } = useQuery({
@@ -195,6 +196,28 @@ export default function CatalogExplorer({}: Props) {
     queryFn: getCatalog,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Auto-refresh on first load if catalog is empty
+  useEffect(() => {
+    if (catalog && catalog.total_workspaces === 0 && !isLoading && !isRefreshing && !hasAutoRefreshed) {
+      console.log("Catalog is empty, triggering auto-refresh...");
+      setHasAutoRefreshed(true);
+      handleAutoRefresh();
+    }
+  }, [catalog, isLoading, isRefreshing, hasAutoRefreshed]);
+
+  const handleAutoRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await refreshActiveCatalog();
+      await refetch();
+    } catch (error) {
+      console.error('Auto-refresh failed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -235,15 +258,27 @@ export default function CatalogExplorer({}: Props) {
 
   if (isLoading) {
     return (
-          <div className="h-full overflow-auto bg-[#161b22]">
-        <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
+      <div className="h-full flex flex-col bg-[#161b22]">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
-              <Building2 size={12} className="text-[#58a6ff]" />
+            <Building2 size={12} className="text-[#58a6ff]" />
             Fabric Explorer
           </h2>
         </div>
-        <div className="bg-[#2d333b] text-center py-2">
-          <div className="text-xs text-[#a8b2d1]">Loading catalog...</div>
+
+        {/* Fixed Statistics Line */}
+        <div className="flex-shrink-0 bg-[#2d333b] text-center py-2">
+          <div className="text-xs text-[#a8b2d1]">
+            {isRefreshing ? "Loading..." : "Loading catalog..."}
+          </div>
+        </div>
+
+        {/* Empty scrollable content */}
+        <div className="flex-1 overflow-auto">
+          <div className="space-y-0">
+            {/* Empty content */}
+          </div>
         </div>
       </div>
     );
@@ -251,15 +286,25 @@ export default function CatalogExplorer({}: Props) {
 
   if (error) {
     return (
-          <div className="h-full overflow-auto bg-[#161b22]">
-        <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
+      <div className="h-full flex flex-col bg-[#161b22]">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
-              <Building2 size={12} className="text-[#58a6ff]" />
+            <Building2 size={12} className="text-[#58a6ff]" />
             Fabric Explorer
           </h2>
         </div>
-        <div className="bg-[#2d333b] text-center py-2">
+
+        {/* Fixed Statistics Line */}
+        <div className="flex-shrink-0 bg-[#2d333b] text-center py-2">
           <div className="text-xs text-[#f85149]">Error loading catalog: {error.message}</div>
+        </div>
+
+        {/* Empty scrollable content */}
+        <div className="flex-1 overflow-auto">
+          <div className="space-y-0">
+            {/* Empty content */}
+          </div>
         </div>
       </div>
     );
@@ -267,15 +312,25 @@ export default function CatalogExplorer({}: Props) {
 
   if (!catalog) {
     return (
-          <div className="h-full overflow-auto bg-[#161b22]">
-        <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
+      <div className="h-full flex flex-col bg-[#161b22]">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-[#161b22] h-10">
           <h2 className="text-sm font-bold text-[#f0f6fc] flex items-center gap-2">
-              <Building2 size={12} className="text-[#58a6ff]" />
+            <Building2 size={12} className="text-[#58a6ff]" />
             Fabric Explorer
           </h2>
         </div>
-        <div className="bg-[#2d333b] text-center py-2">
+
+        {/* Fixed Statistics Line */}
+        <div className="flex-shrink-0 bg-[#2d333b] text-center py-2">
           <div className="text-xs text-[#a8b2d1]">No catalog data available</div>
+        </div>
+
+        {/* Empty scrollable content */}
+        <div className="flex-1 overflow-auto">
+          <div className="space-y-0">
+            {/* Empty content */}
+          </div>
         </div>
       </div>
     );
@@ -297,10 +352,19 @@ export default function CatalogExplorer({}: Props) {
                 if (isRefreshing) return; // Prevent multiple clicks
                 setIsRefreshing(true);
                 try {
+                  console.log("Refreshing active catalog...");
                   await refreshActiveCatalog();
+                  console.log("Active catalog refreshed, refetching data...");
                   await refetch();
+                  console.log("Catalog data refetched successfully");
                 } catch (error) {
                   console.error('Failed to refresh active catalog:', error);
+                  // Try to refetch anyway to get any partial data
+                  try {
+                    await refetch();
+                  } catch (refetchError) {
+                    console.error('Failed to refetch after refresh error:', refetchError);
+                  }
                 } finally {
                   setIsRefreshing(false);
                 }
@@ -344,10 +408,19 @@ export default function CatalogExplorer({}: Props) {
                   setShowDropdown(false);
                   setIsRefreshing(true);
                   try {
+                    console.log("Refreshing full catalog...");
                     await refreshCatalog();
+                    console.log("Full catalog refreshed, refetching data...");
                     await refetch();
+                    console.log("Catalog data refetched successfully");
                   } catch (error) {
                     console.error('Failed to refresh catalog:', error);
+                    // Try to refetch anyway to get any partial data
+                    try {
+                      await refetch();
+                    } catch (refetchError) {
+                      console.error('Failed to refetch after refresh error:', refetchError);
+                    }
                   } finally {
                     setIsRefreshing(false);
                   }
@@ -406,7 +479,7 @@ export default function CatalogExplorer({}: Props) {
           <div className="flex flex-col items-center space-y-2">
             <div className="w-6 h-6 border-2 border-[#1f6feb] border-t-transparent rounded-full animate-spin"></div>
             <div className="text-sm text-[#8b949e] font-medium">
-              {isRefreshing ? 'Refreshing catalog...' : 'Loading catalog...'}
+              Loading...
             </div>
           </div>
         </div>
