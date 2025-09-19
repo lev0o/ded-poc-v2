@@ -210,10 +210,19 @@ export default function CatalogExplorer({}: Props) {
     if (isRefreshing) return;
     setIsRefreshing(true);
     try {
-      await refreshActiveCatalog();
+      console.log("Auto-refreshing full catalog...");
+      await refreshCatalog();
+      console.log("Auto-refresh completed, refetching data...");
       await refetch();
+      console.log("Auto-refresh data refetched successfully");
     } catch (error) {
       console.error('Auto-refresh failed:', error);
+      // Try to refetch anyway to get any partial data
+      try {
+        await refetch();
+      } catch (refetchError) {
+        console.error('Failed to refetch after auto-refresh error:', refetchError);
+      }
     } finally {
       setIsRefreshing(false);
     }
@@ -352,13 +361,13 @@ export default function CatalogExplorer({}: Props) {
                 if (isRefreshing) return; // Prevent multiple clicks
                 setIsRefreshing(true);
                 try {
-                  console.log("Refreshing active catalog...");
-                  await refreshActiveCatalog();
-                  console.log("Active catalog refreshed, refetching data...");
+                  console.log("Refreshing full catalog...");
+                  await refreshCatalog();
+                  console.log("Full catalog refreshed, refetching data...");
                   await refetch();
                   console.log("Catalog data refetched successfully");
                 } catch (error) {
-                  console.error('Failed to refresh active catalog:', error);
+                  console.error('Failed to refresh catalog:', error);
                   // Try to refetch anyway to get any partial data
                   try {
                     await refetch();
@@ -375,7 +384,7 @@ export default function CatalogExplorer({}: Props) {
                    ? 'bg-[#161b22] text-[#e6edf3] cursor-not-allowed' 
                    : 'bg-[#0d1117] text-[#e6edf3] hover:bg-[#161b22]'
                }`}
-              title={isRefreshing ? "Refreshing..." : "Refresh active workspaces"}
+              title={isRefreshing ? "Refreshing..." : "Refresh all workspaces"}
             >
                   {isRefreshing ? (
                     <RefreshCw size={10} className="animate-spin" />
@@ -440,12 +449,16 @@ export default function CatalogExplorer({}: Props) {
       {/* Fixed Statistics Line */}
       <div className="flex-shrink-0 bg-[#2d333b] text-center py-2">
         <div className="text-xs text-[#a8b2d1]">
-          {catalog.total_workspaces} workspaces • {catalog.total_databases} databases • {catalog.total_tables} tables • {catalog.total_columns} columns
+          {isRefreshing ? (
+            "Loading from Fabric..."
+          ) : (
+            `${catalog.total_workspaces} workspaces • ${catalog.total_databases} databases • ${catalog.total_tables} tables • ${catalog.total_columns} columns`
+          )}
         </div>
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto relative">
         <div className="space-y-0">
           {catalog.workspaces.map((ws: WorkspaceCatalog) => (
             <WorkspaceNode 
@@ -471,19 +484,14 @@ export default function CatalogExplorer({}: Props) {
             </WorkspaceNode>
           ))}
         </div>
-      </div>
 
-      {/* Loading overlay */}
-      {(isLoading || isRefreshing) && (
-        <div className="absolute inset-0 bg-[#0d1117]/80 backdrop-blur-sm z-10 flex items-center justify-center">
-          <div className="flex flex-col items-center space-y-2">
+        {/* Loading overlay - only covers the scrollable content area */}
+        {isRefreshing && (
+          <div className="absolute inset-0 bg-[#0d1117]/80 backdrop-blur-sm z-10 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-[#1f6feb] border-t-transparent rounded-full animate-spin"></div>
-            <div className="text-sm text-[#8b949e] font-medium">
-              Loading...
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
