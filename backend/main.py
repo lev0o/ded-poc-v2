@@ -15,7 +15,7 @@ app = FastAPI(title="Fabric Explorer API", version="0.3.0")
 
 # Get allowed origins from environment or default to localhost
 import os
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001").split(",")
 
 app.add_middleware(
     CORSMiddleware,

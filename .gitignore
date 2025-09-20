@@ -45,6 +45,37 @@ frontend/*.tsbuildinfo
 frontend/next-env.d.ts
 
 # =============================================================================
+# FRONTEND-V2 (Next.js)
+# =============================================================================
+
+# dependencies
+frontend-v2/node_modules/
+frontend-v2/.pnp
+frontend-v2/.pnp.*
+frontend-v2/.yarn/*
+!frontend-v2/.yarn/patches
+!frontend-v2/.yarn/plugins
+!frontend-v2/.yarn/releases
+!frontend-v2/.yarn/versions
+
+# testing
+frontend-v2/coverage/
+
+# next.js
+frontend-v2/.next/
+frontend-v2/out/
+
+# production
+frontend-v2/build/
+
+# vercel
+frontend-v2/.vercel
+
+# typescript
+frontend-v2/*.tsbuildinfo
+frontend-v2/next-env.d.ts
+
+# =============================================================================
 # BACKEND (Python/FastAPI)
 # =============================================================================
 

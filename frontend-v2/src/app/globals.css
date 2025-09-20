@@ -1,0 +1,217 @@
+@import '../styles/design-tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Enhanced VS Code Dark+ scrollbars with true overlay styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(22, 27, 34, 0.5);
+  border-radius: var(--radius-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(48, 54, 61, 0.8);
+  border-radius: var(--radius-base);
+  border: none;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(48, 54, 61, 1);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(48, 54, 61, 0.8) rgba(22, 27, 34, 0.5);
+}
+
+/* Force scrollbars to overlay without taking space */
+.overlay-scrollbar {
+  scrollbar-gutter: stable;
+}
+
+.overlay-scrollbar::-webkit-scrollbar {
+  position: absolute;
+}
+
+/* Hide scrollbar completely to prevent layout shift */
+.no-scrollbar-space {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.no-scrollbar-space::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+:root { color-scheme: light dark; }
+html, body, #__next { height: 100%; }
+
+/* Ensure proper scrolling behavior */
+.chat-messages-container {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.chat-messages-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-messages-container::-webkit-scrollbar-track {
+  background: rgba(22, 27, 34, 0.3);
+  border-radius: 4px;
+}
+
+.chat-messages-container::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.7);
+  border-radius: 4px;
+}
+
+.chat-messages-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.9);
+}
+
+/* Dark mode scrollbar */
+@media (prefers-color-scheme: dark) {
+  .chat-messages-container::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.7);
+  }
+  
+  .chat-messages-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 85, 99, 0.9);
+  }
+}
+
+/* Table horizontal scrolling */
+.table-container {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: rgba(22, 27, 34, 0.3);
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.7);
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.9);
+}
+
+/* Dark mode table scrollbar */
+@media (prefers-color-scheme: dark) {
+  .table-container::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.7);
+  }
+  
+  .table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 85, 99, 0.9);
+  }
+}
+
+/* Vega chart dark theme overrides */
+.vega-embed {
+  background-color: var(--color-bg-primary) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.vega-embed svg {
+  background-color: var(--color-bg-primary) !important;
+  margin: 0 !important;
+}
+
+.vega-embed .vega-actions {
+  background-color: var(--color-bg-primary) !important;
+}
+
+/* Ensure table cells have proper dark backgrounds */
+table td, table th {
+  background-color: inherit !important;
+}
+
+/* Seamless gradient animation for header - proven technique */
+.seamless-gradient {
+  background: linear-gradient(
+    90deg,
+    #161b22,
+    #1a1e23,
+    #1f2937,
+    rgba(30, 58, 138, 0.3),
+    rgba(124, 58, 237, 0.2),
+    #1a1e23,
+    #161b22
+  );
+  background-size: 200% 100%;
+  animation: gradient-flow 8s linear infinite;
+}
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* Fabric Explorer scrollbar - VS Code style overlay contained within the explorer */
+.catalog-scrollbar {
+  scrollbar-gutter: stable;
+  overflow: overlay;
+  position: relative;
+  /* Contained within the Fabric Explorer div */
+  margin-right: 0;
+  padding-right: 0;
+}
+
+.catalog-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+
+.catalog-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.catalog-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(48, 54, 61, 0.6);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  min-height: 20px;
+}
+
+.catalog-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(48, 54, 61, 0.8);
+  background-clip: content-box;
+}
+
+.catalog-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox overlay scrollbar */
+.catalog-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(48, 54, 61, 0.6) transparent;
+}
