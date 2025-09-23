@@ -1,8 +1,8 @@
 "use client";
 import React, { useRef, useEffect, useState } from "react";
 import { ChatPanel } from "./ChatPanel";
-import { ContextItem, AgentRunResponse } from "../../lib/types/common";
-import { AgentRunResponse as ChatAgentRunResponse } from "../../lib/types/chat";
+import { ContextItem } from "../../lib/types/common";
+import { AgentRunResponse } from "../../lib/types/chat";
 
 interface ChatPanelWrapperProps {
   context: ContextItem[];

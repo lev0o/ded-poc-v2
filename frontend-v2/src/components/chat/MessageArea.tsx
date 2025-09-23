@@ -1,7 +1,7 @@
 "use client";
 import React, { useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { ChatTurn } from "@/lib/types/common";
+import { ChatTurn } from "../../lib/types/common";
 
 interface Props {
   turns: ChatTurn[];
@@ -20,7 +20,7 @@ export function MessageArea({ turns, className = "" }: Props) {
     <div className={`h-full overflow-y-auto ${className}`}>
       <div className="space-y-0">
         {turns.map((t, i) => (
-          <div key={i} className={`w-full px-3 py-2 shadow-sm ${t.role === "user" ? "bg-[var(--color-info)]" : "bg-[var(--color-bg-primary)]"}`}>
+          <div key={i} className={`w-full px-3 py-2 shadow-sm ${t.role === "user" ? "bg-[var(--color-info)]" : "bg-[var(--color-bg-ai-message)]"}`}>
             <div className={`flex items-center gap-2 mb-1 ${t.role === "user" ? "justify-end" : "justify-start"}`}>
               <div className={`text-xs font-semibold ${t.role === "user" ? "text-white" : "text-[var(--color-info)]"}`}>
                 {t.role === "user" ? "You" : "Nour"}

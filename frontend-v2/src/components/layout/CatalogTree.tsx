@@ -32,6 +32,7 @@ import {
   WorkspaceState,
   DatabaseKind
 } from '../../lib/types/catalog';
+import { ContextItem } from '../../lib/types/common';
 
 // ============================================================================
 // TYPES
@@ -56,34 +57,34 @@ interface StatusIconConfig {
 const ICON_SIZE = iconSizes.sm; // 14px
 const CHEVRON_SIZE = iconSizes.sm; // 14px
 
-// Database type icon mapping using predefined Tailwind classes
+// Database type icon mapping using design tokens
 const DATABASE_ICONS: Record<DatabaseKind, IconConfig> = {
-  'SQLEndpoint': { icon: Server, className: 'text-green-500' },
-  'LakehouseSqlEndpoint': { icon: Server, className: 'text-blue-500' },
-  'SqlDatabase': { icon: DatabaseIcon, className: 'text-green-500' },
-  'Lakehouse': { icon: Waves, className: 'text-blue-500' },
-  'Warehouse': { icon: Warehouse, className: 'text-orange-500' },
-  'DataWarehouse': { icon: Cloud, className: 'text-purple-500' },
+  'SQLEndpoint': { icon: Server, className: 'text-[var(--color-icon-database-sql)]' },
+  'LakehouseSqlEndpoint': { icon: Server, className: 'text-[var(--color-icon-database-lakehouse)]' },
+  'SqlDatabase': { icon: DatabaseIcon, className: 'text-[var(--color-icon-database-sql)]' },
+  'Lakehouse': { icon: Waves, className: 'text-[var(--color-icon-database-lakehouse)]' },
+  'Warehouse': { icon: Warehouse, className: 'text-[var(--color-icon-database-warehouse)]' },
+  'DataWarehouse': { icon: Cloud, className: 'text-[var(--color-icon-database-datawarehouse)]' },
 };
 
-// Level-specific icon mapping using predefined Tailwind classes
+// Level-specific icon mapping using design tokens
 const LEVEL_ICONS: Record<number, IconConfig> = {
-  0: { icon: Building2, className: 'text-blue-500' }, // Workspaces
-  2: { icon: FolderOpen, className: 'text-red-500' }, // Schemas
-  3: { icon: Table2, className: 'text-purple-500' }, // Tables
-  4: { icon: Columns, className: 'text-orange-500' }, // Columns
+  0: { icon: Building2, className: 'text-[var(--color-icon-workspace)]' }, // Workspaces
+  2: { icon: FolderOpen, className: 'text-[var(--color-icon-schema)]' }, // Schemas
+  3: { icon: Table2, className: 'text-[var(--color-icon-table)]' }, // Tables
+  4: { icon: Columns, className: 'text-[var(--color-icon-column)]' }, // Columns
 };
 
-// Workspace status icon mapping using predefined Tailwind classes
+// Workspace status icon mapping using design tokens
 const STATUS_ICONS: Record<WorkspaceState, StatusIconConfig> = {
-  'active': { icon: Power, className: 'text-green-500' },
-  'inactive': { icon: Pause, className: 'text-orange-500' },
-  'paused': { icon: Pause, className: 'text-orange-500' },
-  'suspended': { icon: PowerOff, className: 'text-red-500' },
-  'deleted': { icon: XCircle, className: 'text-red-500' },
-  'provisioning': { icon: Zap, className: 'text-blue-500' },
-  'starting': { icon: Play, className: 'text-blue-500' },
-  'stopping': { icon: PowerOff, className: 'text-orange-500' },
+  'active': { icon: Power, className: 'text-[var(--color-icon-status-active)]' },
+  'inactive': { icon: Pause, className: 'text-[var(--color-icon-status-inactive)]' },
+  'paused': { icon: Pause, className: 'text-[var(--color-icon-status-paused)]' },
+  'suspended': { icon: PowerOff, className: 'text-[var(--color-icon-status-suspended)]' },
+  'deleted': { icon: XCircle, className: 'text-[var(--color-icon-status-deleted)]' },
+  'provisioning': { icon: Zap, className: 'text-[var(--color-icon-status-provisioning)]' },
+  'starting': { icon: Play, className: 'text-[var(--color-icon-status-starting)]' },
+  'stopping': { icon: PowerOff, className: 'text-[var(--color-icon-status-stopping)]' },
 };
 
 // ============================================================================
@@ -109,13 +110,13 @@ const getDatabaseIcon = (kind: DatabaseKind): IconConfig => {
       return DATABASE_ICONS.LakehouseSqlEndpoint;
     }
     if (kindLower.includes('warehouse')) {
-      return { icon: Server, className: 'text-orange-500' };
+      return { icon: Server, className: 'text-[var(--color-icon-database-warehouse)]' };
     }
     return DATABASE_ICONS.SQLEndpoint;
   }
   
   // Default fallback
-  return { icon: DatabaseIcon, className: 'text-gray-500' };
+  return { icon: DatabaseIcon, className: 'text-[var(--color-icon-database-default)]' };
 };
 
 /**
@@ -133,14 +134,14 @@ const getIconForLevel = (item: WorkspaceItem | DatabaseItem | SchemaItem | Table
   }
   
   // Default fallback
-  return { icon: DatabaseIcon, className: 'text-gray-500' };
+  return { icon: DatabaseIcon, className: 'text-[var(--color-icon-database-default)]' };
 };
 
 /**
  * Gets the status icon configuration for a workspace state
  */
 const getStatusIcon = (state: WorkspaceState): StatusIconConfig => {
-  return STATUS_ICONS[state] || { icon: Clock, className: 'text-gray-500' };
+  return STATUS_ICONS[state] || { icon: Clock, className: 'text-[var(--color-icon-status-unknown)]' };
 };
 
 /**
@@ -241,10 +242,16 @@ const TreeItem: React.FC<TreeItemProps> = ({
   const iconConfig = getIconForLevel(item, level);
   const IconComponent = iconConfig.icon;
   
+  const handleItemClick = () => {
+    if (hasChildren) {
+      onToggle();
+    }
+  };
+  
   return (
-    <div className={`flex items-center hover:bg-[${colors.background.secondary}]`}>
+    <div className="flex items-center hover:bg-[var(--color-bg-secondary)]">
       <button 
-        onClick={hasChildren ? onToggle : undefined}
+        onClick={hasChildren ? handleItemClick : undefined}
         className={`flex items-center gap-1.5 font-normal hover:underline text-xs px-2 py-1 flex-1 text-left min-w-0 ${
           hasChildren ? 'cursor-pointer' : 'cursor-default'
         }`}
@@ -253,7 +260,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
       >
         <ChevronIcon isExpanded={isExpanded} hasChildren={hasChildren} />
         <IconComponent size={ICON_SIZE} className={iconConfig.className} />
-        <span className={`truncate min-w-0 flex-1 text-[${colors.text.secondary}]`}>{getItemName(item, level)}</span>
+        <span className="truncate min-w-0 flex-1 text-[var(--color-text-secondary)]">{getItemName(item, level)}</span>
       </button>
       
       {/* Status icon for workspaces only */}
@@ -268,7 +275,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
  * Children container component
  */
 const ChildrenContainer: React.FC<{
-  children: any[];
+  children: (WorkspaceItem | DatabaseItem | SchemaItem | TableItem | ColumnItem)[];
   level: number;
   parentKey: string;
   expanded: { [key: string]: boolean };
@@ -276,7 +283,7 @@ const ChildrenContainer: React.FC<{
 }> = ({ children, level, parentKey, expanded, toggleExpanded }) => {
   return (
     <div className="ml-4">
-      {children.map((child: any, childIndex: number) => (
+      {children.map((child: WorkspaceItem | DatabaseItem | SchemaItem | TableItem | ColumnItem, childIndex: number) => (
         <CatalogTree 
           key={getItemKey(child, level + 1, parentKey)}
           data={child} 

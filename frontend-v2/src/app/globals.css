@@ -54,8 +54,53 @@
   display: none; /* Chrome, Safari, Opera */
 }
 
-:root { color-scheme: light dark; }
-html, body, #__next { height: 100%; }
+:root { 
+  color-scheme: light dark;
+  /* Dark theme (default) */
+  --color-bg-primary: #0a0e13;
+  --color-bg-secondary: #161b22;
+  --color-bg-tertiary: #21262d;
+  --color-bg-elevated: #2d333b;
+  --color-bg-ai-message: #050505;
+  --color-text-primary: #e6edf3;
+  --color-text-secondary: #c9d1d9;
+  --color-text-tertiary: #8b949e;
+  --color-border-primary: #30363d;
+  --color-info: #0085D0;
+  
+  /* Transition properties - only apply when transitions are enabled */
+  transition: none;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --color-bg-primary: #e5e7eb;
+  --color-bg-secondary: #f6f8fa;
+  --color-bg-tertiary: #e9ecef;
+  --color-bg-elevated: #dee2e6;
+  --color-bg-ai-message: #dee2e6;
+  --color-text-primary: #212529;
+  --color-text-secondary: #495057;
+  --color-text-tertiary: #6c757d;
+  --color-border-primary: #e9ecef;
+  --color-info: #23A9F2;
+}
+
+/* Enable transitions only after component is mounted */
+.theme-transitions-enabled {
+  transition: all 200ms ease-in-out;
+}
+
+.theme-transitions-enabled * {
+  transition: background-color 200ms ease-in-out, 
+              color 200ms ease-in-out, 
+              border-color 200ms ease-in-out,
+              box-shadow 200ms ease-in-out;
+}
+
+html, body, #__next { 
+  height: 100%;
+}
 
 /* Ensure proper scrolling behavior */
 .chat-messages-container {

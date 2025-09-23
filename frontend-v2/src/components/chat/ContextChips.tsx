@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { ContextItem } from "@/lib/types/common";
+import { ContextItem } from "../../lib/types/common";
 import { 
   Building2, 
   Server, 
@@ -18,17 +18,17 @@ interface Props {
 function getContextIcon(label: string) {
   switch (label.toLowerCase()) {
     case "workspace":
-      return <Building2 size={12} className="text-blue-500" />;
+      return <Building2 size={12} className="text-[var(--color-icon-workspace)]" />;
     case "sql database/endpoint":
-      return <Server size={12} className="text-green-500" />;
+      return <Server size={12} className="text-[var(--color-icon-database-sql)]" />;
     case "schema":
-      return <FolderOpen size={12} className="text-red-500" />;
+      return <FolderOpen size={12} className="text-[var(--color-icon-schema)]" />;
     case "table":
-      return <Table2 size={12} className="text-purple-500" />;
+      return <Table2 size={12} className="text-[var(--color-icon-table)]" />;
     case "column":
-      return <Columns size={12} className="text-orange-500" />;
+      return <Columns size={12} className="text-[var(--color-icon-column)]" />;
     default:
-      return <Building2 size={12} className="text-blue-500" />;
+      return <Building2 size={12} className="text-[var(--color-icon-workspace)]" />;
   }
 }
 

@@ -35,7 +35,7 @@
   --color-neutral-900: #0d1117;
 
 /* Background Colors */
---color-bg-primary: #0d1117;    /* Main background (center panel) */
+--color-bg-primary: #0a0e13;    /* Main background (center panel) */
 --color-bg-secondary: #161b22;  /* Side panels (left/right) */
 --color-bg-tertiary: #21262d;   /* Elevated elements */
 --color-bg-elevated: #2d333b;   /* Higher elevation */

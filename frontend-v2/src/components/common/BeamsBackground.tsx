@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { motion } from "motion/react";
+import { useTheme } from "../../lib/providers/ThemeProvider";
 
 interface AnimatedGradientBackgroundProps {
     className?: string;
@@ -43,6 +44,7 @@ export function BeamsBackground({
     intensity = "strong",
     children,
 }: AnimatedGradientBackgroundProps) {
+    const { theme } = useTheme();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const beamsRef = useRef<Beam[]>([]);
     const animationFrameRef = useRef<number>(0);
@@ -166,9 +168,14 @@ export function BeamsBackground({
         };
     }, [intensity]);
 
+    // Theme-aware colors
+    const bgColor = theme === 'light' ? '#ffffff' : '#050505';
+    const overlayColor = theme === 'light' ? '#ffffff' : '#050505';
+
     return (
         <div
-            className={`relative w-full bg-[#050505] ${className || ''}`}
+            className={`relative w-full ${className || ''}`}
+            style={{ backgroundColor: bgColor }}
         >
             <div className="absolute inset-0 overflow-hidden">
                 <canvas
@@ -179,7 +186,11 @@ export function BeamsBackground({
             </div>
 
             <motion.div
-                className="absolute inset-0 bg-[#050505]/5"
+                className="absolute inset-0"
+                style={{
+                    backgroundColor: `${overlayColor}05`,
+                    backdropFilter: "blur(50px)",
+                }}
                 animate={{
                     opacity: [0.05, 0.15, 0.05],
                 }}
@@ -187,9 +198,6 @@ export function BeamsBackground({
                     duration: 10,
                     ease: "easeInOut",
                     repeat: Number.POSITIVE_INFINITY,
-                }}
-                style={{
-                    backdropFilter: "blur(50px)",
                 }}
             />
 

@@ -1,9 +1,11 @@
 "use client";
 import React, { useRef, useEffect, useState } from "react";
-import { Building2, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { getCatalog, refreshCatalog } from '../../lib/api/catalog';
 import { CatalogTree } from './CatalogTree';
 import { colors, iconSizes, spacing } from '../../lib/design';
+import { CatalogData } from '../../lib/types/catalog';
+import { ContextItem } from '../../lib/types/common';
 
 interface FabricExplorerProps {
   onRefreshStateChange?: (isRefreshing: boolean) => void;
@@ -12,7 +14,7 @@ interface FabricExplorerProps {
 
 export function FabricExplorer({ onRefreshStateChange, onMinWidthChange }: FabricExplorerProps) {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const [catalogData, setCatalogData] = React.useState<any>(null);
+  const [catalogData, setCatalogData] = React.useState<CatalogData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const statsRef = useRef<HTMLDivElement>(null);
 
@@ -84,19 +86,23 @@ export function FabricExplorer({ onRefreshStateChange, onMinWidthChange }: Fabri
   return (
     <div className="h-full flex flex-col bg-[var(--color-bg-secondary)]">
       {/* Fixed Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-[var(--color-bg-secondary)] h-10">
-        <h2 className="text-xs font-semibold text-[var(--color-text-secondary)] flex items-center gap-2">
-          <Building2 size={iconSizes.xs} className="text-blue-500" />
+      <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-[var(--color-bg-tertiary)] h-10">
+        <h2 className="text-sm font-bold text-[var(--color-text-primary)] flex items-center gap-2 font-primary">
+          <img 
+            src="/fabric.svg" 
+            alt="Fabric" 
+            className="w-4 h-4"
+          />
           Fabric Explorer
         </h2>
 
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className={`text-xs rounded px-2 py-1 transition-colors font-medium ${
+          className={`text-xs rounded px-2 py-1 font-medium ${
             isRefreshing
-              ? `bg-[${colors.background.secondary}] text-[${colors.text.primary}] cursor-not-allowed`
-              : `bg-[${colors.background.primary}] text-[${colors.text.primary}] hover:bg-[${colors.background.secondary}]`
+              ? 'bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] cursor-not-allowed'
+              : 'bg-[var(--color-bg-elevated)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]'
           }`}
           title={isRefreshing ? "Refreshing..." : "Refresh catalog"}
         >
@@ -126,9 +132,9 @@ export function FabricExplorer({ onRefreshStateChange, onMinWidthChange }: Fabri
       {/* Scrollable content with catalog tree */}
       <div className="flex-1 overflow-auto catalog-scrollbar relative">
         {error ? (
-          <div className="p-3 text-red-400 text-sm">
+          <div className="p-3 text-[var(--color-error)] text-sm">
             <div className="font-semibold mb-2">Error:</div>
-            <div className="font-mono text-xs bg-red-900/20 p-2 rounded">
+            <div className="font-mono text-xs bg-[var(--color-error)]/20 p-2 rounded">
               {error}
             </div>
           </div>

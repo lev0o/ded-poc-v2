@@ -3,3 +3,7 @@ export { ChatPanelWrapper } from './ChatPanelWrapper';
 export { MessageArea } from './MessageArea';
 export { ContextChips } from './ContextChips';
 export { MentionDropdown } from './MentionDropdown';
+export { ChatHeader } from './ChatHeader';
+export { ChatInfoBanner } from './ChatInfoBanner';
+export { ChatInput } from './ChatInput';
+export { ChatInfoModal } from './ChatInfoModal';

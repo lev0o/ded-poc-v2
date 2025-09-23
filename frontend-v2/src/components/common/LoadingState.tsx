@@ -17,7 +17,7 @@ export function LoadingState({
   return (
     <div className={`flex flex-col items-center justify-center min-h-[200px] p-6 ${className}`}>
       <LoadingSpinner size={size} className="mb-4" />
-      <p className={`text-sm text-[${colors.text.tertiary}]`}>
+      <p className="text-sm text-[var(--color-text-tertiary)]">
         {message}
       </p>
     </div>
@@ -37,7 +37,7 @@ export function Skeleton({
 }: SkeletonProps) {
   return (
     <div 
-      className={`bg-[${colors.background.tertiary}] rounded-[${spacing[1]}] animate-pulse ${className}`}
+      className={`bg-[var(--color-bg-tertiary)] rounded animate-pulse ${className}`}
       style={{ height, width }}
     />
   );

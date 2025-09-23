@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getCatalog } from "@/lib/api/catalog";
-import { ContextItem } from "@/lib/types/common";
+import { getCatalog } from "../../lib/api/catalog";
+import { ContextItem } from "../../lib/types/common";
+import { getFilteredMentionItems, getContextDisplayName } from "../../lib/utils/catalogUtils";
+import { CatalogData } from "../../lib/types/catalog";
 import { 
   Building2, 
   Database as DatabaseIcon, 
@@ -27,18 +29,18 @@ interface Props {
 }
 
 // Helper function to get workspace status icon
-function getWorkspaceStatusIcon(workspace: any) {
+function getWorkspaceStatusIcon(workspace: { state?: string }) {
   const state = workspace.state?.toLowerCase();
   
   switch (state) {
     case 'active':
-      return <CheckCircle size={12} className="text-green-500" />;
+      return <CheckCircle size={12} className="text-[var(--color-icon-status-active)]" />;
     case 'suspended':
-      return <AlertCircle size={12} className="text-orange-500" />;
+      return <AlertCircle size={12} className="text-[var(--color-icon-status-suspended)]" />;
     case 'deleted':
-      return <XCircle size={12} className="text-red-500" />;
+      return <XCircle size={12} className="text-[var(--color-icon-status-deleted)]" />;
     default:
-      return <Clock size={12} className="text-blue-500" />;
+      return <Clock size={12} className="text-[var(--color-icon-status-unknown)]" />;
   }
 }
 
@@ -47,49 +49,18 @@ function getDatabaseIcon(kind: string) {
   const kindLower = kind.toLowerCase();
   
   if (kindLower.includes('sql') && kindLower.includes('endpoint')) {
-    return <Server size={14} className="text-green-500" />;
+    return <Server size={14} className="text-[var(--color-icon-database-sql)]" />;
   } else if (kindLower.includes('sql') && kindLower.includes('database')) {
-    return <DatabaseIcon size={14} className="text-green-500" />;
+    return <DatabaseIcon size={14} className="text-[var(--color-icon-database-sql)]" />;
   } else if (kindLower.includes('lakehouse')) {
-    return <HardDrive size={14} className="text-blue-500" />;
+    return <HardDrive size={14} className="text-[var(--color-icon-database-lakehouse)]" />;
   } else if (kindLower.includes('warehouse')) {
-    return <Cloud size={14} className="text-purple-500" />;
+    return <Cloud size={14} className="text-[var(--color-icon-database-warehouse)]" />;
   } else {
-    return <DatabaseIcon size={14} className="text-green-500" />;
+    return <DatabaseIcon size={14} className="text-[var(--color-icon-database-default)]" />;
   }
 }
 
-// Helper function to get display name from ID and catalog data
-function getDisplayName(item: ContextItem, catalog: any): string {
-  if (item.label === "Workspace") {
-    // Format: workspace:workspaceId
-    const parts = item.id.split(':');
-    const workspaceId = parts[1];
-    const workspace = catalog.workspaces.find((ws: any) => ws.id === workspaceId);
-    return workspace?.name || workspaceId;
-  } else if (item.label === "SQL Database/Endpoint") {
-    // Format: database:workspaceId:databaseId
-    const parts = item.id.split(':');
-    const workspaceId = parts[1];
-    const databaseId = parts[2];
-    const workspace = catalog.workspaces.find((ws: any) => ws.id === workspaceId);
-    const database = workspace?.databases?.find((db: any) => db.id === databaseId);
-    return database?.name || databaseId;
-  } else if (item.label === "Schema") {
-    // Format: schema:workspaceId:databaseId:schemaName
-    const parts = item.id.split(':');
-    return parts[3] || item.id;
-  } else if (item.label === "Table") {
-    // Format: table:workspaceId:databaseId:schemaName.tableName
-    const parts = item.id.split(':');
-    return parts[3] || item.id;
-  } else if (item.label === "Column") {
-    // Format: column:workspaceId:databaseId:schemaName.tableName.columnName
-    const parts = item.id.split(':');
-    return parts[3] || item.id;
-  }
-  return item.id;
-}
 
 export function MentionDropdown({ query, onSelect, onClose, position, selectedIndex }: Props) {
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -100,69 +71,9 @@ export function MentionDropdown({ query, onSelect, onClose, position, selectedIn
     staleTime: 5 * 60 * 1000,
   });
 
-  // Filter items based on query
+  // Use the utility function for filtering items
   const filteredItems: ContextItem[] = React.useMemo(() => {
-    if (!catalog) return [];
-    
-    const items: ContextItem[] = [];
-    const queryLower = query.toLowerCase();
-
-    // Add workspaces
-    catalog.workspaces.forEach((ws: any) => {
-      if (!query || ws.name?.toLowerCase().includes(queryLower)) {
-        items.push({ label: "Workspace", id: `workspace:${ws.id}` });
-      }
-    });
-
-    // Add databases
-    catalog.workspaces.forEach((ws: any) => {
-      ws.databases?.forEach((db: any) => {
-        if (!query || db.name?.toLowerCase().includes(queryLower)) {
-          items.push({ label: "SQL Database/Endpoint", id: `database:${ws.id}:${db.id}` });
-        }
-      });
-    });
-
-    // Add schemas
-    catalog.workspaces.forEach((ws: any) => {
-      ws.databases?.forEach((db: any) => {
-        db.schemas?.forEach((schema: any) => {
-          if (!query || schema.name?.toLowerCase().includes(queryLower)) {
-            items.push({ label: "Schema", id: `schema:${ws.id}:${db.id}:${schema.name}` });
-          }
-        });
-      });
-    });
-
-    // Add tables
-    catalog.workspaces.forEach((ws: any) => {
-      ws.databases?.forEach((db: any) => {
-        db.schemas?.forEach((schema: any) => {
-          schema.tables?.forEach((table: any) => {
-            if (!query || table.name?.toLowerCase().includes(queryLower)) {
-              items.push({ label: "Table", id: `table:${ws.id}:${db.id}:${schema.name}.${table.name}` });
-            }
-          });
-        });
-      });
-    });
-
-    // Add columns
-    catalog.workspaces.forEach((ws: any) => {
-      ws.databases?.forEach((db: any) => {
-        db.schemas?.forEach((schema: any) => {
-          schema.tables?.forEach((table: any) => {
-            table.columns?.forEach((column: any) => {
-              if (!query || column.name?.toLowerCase().includes(queryLower)) {
-                items.push({ label: "Column", id: `column:${ws.id}:${db.id}:${schema.name}.${table.name}.${column.name}` });
-              }
-            });
-          });
-        });
-      });
-    });
-
-    return items; // Show all items
+    return getFilteredMentionItems(catalog || null, query);
   }, [catalog, query]);
 
   // Auto-scroll to keep selected item visible
@@ -202,12 +113,12 @@ export function MentionDropdown({ query, onSelect, onClose, position, selectedIn
                  : 'text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)]'
              }`}
            >
-             {item.label === "Workspace" && <Building2 size={12} className="text-blue-500 flex-shrink-0" />}
-             {item.label === "SQL Database/Endpoint" && <Server size={12} className="text-green-500 flex-shrink-0" />}
-             {item.label === "Schema" && <FolderOpen size={12} className="text-red-500 flex-shrink-0" />}
-             {item.label === "Table" && <Table2 size={12} className="text-purple-500 flex-shrink-0" />}
-             {item.label === "Column" && <Columns size={12} className="text-orange-500 flex-shrink-0" />}
-             <span className="text-xs truncate flex-1 min-w-0">{getDisplayName(item, catalog)}</span>
+             {item.label === "Workspace" && <Building2 size={12} className="text-[var(--color-icon-workspace)] flex-shrink-0" />}
+             {item.label === "SQL Database/Endpoint" && <Server size={12} className="text-[var(--color-icon-database-sql)] flex-shrink-0" />}
+             {item.label === "Schema" && <FolderOpen size={12} className="text-[var(--color-icon-schema)] flex-shrink-0" />}
+             {item.label === "Table" && <Table2 size={12} className="text-[var(--color-icon-table)] flex-shrink-0" />}
+             {item.label === "Column" && <Columns size={12} className="text-[var(--color-icon-column)] flex-shrink-0" />}
+             <span className="text-xs truncate flex-1 min-w-0">{getContextDisplayName(item, catalog || null)}</span>
              <span className="text-xs opacity-60 flex-shrink-0 ml-2">{item.label}</span>
            </button>
         ))}

@@ -153,7 +153,7 @@ export function ResizableLayout({
           {/* Blue line overlay on hover */}
           {isHoveringLeft && (
             <div 
-              className={`absolute inset-0 bg-[${colors.info}]`}
+              className="absolute inset-0 bg-[var(--color-info)]"
               style={{ width: '2px', left: '1px' }}
             />
           )}
@@ -182,7 +182,7 @@ export function ResizableLayout({
             {/* Blue line overlay on hover */}
             {isHoveringRight && (
               <div 
-                className={`absolute inset-0 bg-[${colors.info}]`}
+                className="absolute inset-0 bg-[var(--color-info)]"
                 style={{ width: '2px', right: '1px' }}
               />
             )}
